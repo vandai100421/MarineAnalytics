@@ -1,0 +1,30 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "custom": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Custom_1 API",
+      "options": {
+        "baseURL": "{env:CUSTOM_BASE_URL}",
+        "apiKey": "{env:CUSTOM_API_KEY}"
+      },
+      "models": {
+        "glm-5.2": {
+          "name": "GLM 5.2"
+        }
+      }
+    }
+  },
+  "model": "custom/glm-5.2",
+  "permission": {
+    "bash": "allow",
+    "edit": "allow"
+  },
+  "instructions": [
+    "PROJECT.md",
+    "ARCHITECTURE.md",
+    "CODING_STANDARDS.md",
+    "DEVELOPMENT_RULES.md",
+    "TASKS.md"
+  ]
+}

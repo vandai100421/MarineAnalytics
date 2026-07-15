@@ -1,0 +1,62 @@
+# ─── Python ───
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+*.egg-info/
+*.egg
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# ─── Node / Frontend ───
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.local
+.vite/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts
+
+# ─── Env / Secrets ───
+.env
+.env.*
+!.env.example
+
+# ─── IDE ───
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── OS ───
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Docker ───
+docker-compose.override.yml
+
+# ─── DB ───
+*.db
+*.sqlite3
+
+# ─── Logs ───
+*.log
+logs/
+
+# ─── opencode ───
+.opencode/
