@@ -38,6 +38,10 @@ async def write_position(msg: DecodedMessage) -> None:
     metrics.record_position_written()
     logger.debug("position_written", mmsi=msg.mmsi, lat=msg.lat, lon=msg.lon)
 
+    from app.alerts.geofence_engine import check_position_against_geofences
+
+    await check_position_against_geofences(msg)
+
 
 async def upsert_vessel(msg: DecodedMessage) -> None:
     async with async_session_factory() as session:

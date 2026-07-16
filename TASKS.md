@@ -103,12 +103,12 @@ Owner chính: **FE2** + **BE2**.
 
 Owner chính: **BE2** + **FE2**.
 
-- [ ] **T5.1** [BE2] `api/geofences.py`: CRUD geofences (POST/GET/DELETE)
-- [ ] **T5.2** [BE2] `alerts/geofence_engine.py`: ST_Contains check khi nhận position mới → insert alert
-- [ ] **T5.3** [BE2] `api/alerts.py`: `GET /alerts?from=...&geofence_id=...`
-- [ ] **T5.4** [FE2] `components/geofence/GeofenceEditor.tsx`: vẽ polygon trên map (maplibre draw)
-- [ ] **T5.5** [FE2] Alert panel: danh sách alert gần đây + highlight tàu vi phạm
-- [ ] **T5.6** [BE2] Unit test geofence engine (ST_Contains edge cases)
+- [x] **T5.1** [BE2] `api/geofences.py`: CRUD geofences (POST/GET/DELETE)
+- [x] **T5.2** [BE2] `alerts/geofence_engine.py`: ST_Contains check khi nhận position mới → insert alert
+- [x] **T5.3** [BE2] `api/alerts.py`: `GET /alerts?from=...&geofence_id=...`
+- [x] **T5.4** [FE2] `components/geofence/GeofenceEditor.tsx`: vẽ polygon trên map (maplibre draw)
+- [x] **T5.5** [FE2] Alert panel: danh sách alert gần đây + highlight tàu vi phạm
+- [x] **T5.6** [BE2] Unit test geofence engine (ST_Contains edge cases)
 
 ### Sprint 6 — ADS-B Ingestion + Máy bay (tuần 7)
 

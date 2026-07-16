@@ -5,6 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.alerts import router as alerts_router
+from app.api.geofences import router as geofences_router
 from app.api.stats import router as stats_router
 from app.api.vessels import router as vessels_router
 from app.core.config import get_settings
@@ -71,6 +73,8 @@ def create_app() -> FastAPI:
 
     app.include_router(vessels_router)
     app.include_router(stats_router)
+    app.include_router(geofences_router)
+    app.include_router(alerts_router)
     app.include_router(sse_router)
     register_error_handlers(app)
 
