@@ -35,6 +35,12 @@ export interface PositionReport {
   nav_status: number | null
 }
 
+export interface TrackResponse {
+  mmsi: number
+  total: number
+  points: PositionReport[]
+}
+
 export interface BoundingBox {
   minLon: number
   minLat: number
@@ -47,3 +53,19 @@ export interface VesselFilters {
   minSog?: number
   maxSog?: number
 }
+
+export const SHIP_TYPE_OPTIONS = [
+  { value: 30, label: 'Fishing' },
+  { value: 31, label: 'Towing' },
+  { value: 35, label: 'Military' },
+  { value: 36, label: 'Sailing' },
+  { value: 37, label: 'Pleasure craft' },
+  { value: 50, label: 'Pilot vessel' },
+  { value: 51, label: 'Search and rescue' },
+  { value: 52, label: 'Tug' },
+  { value: 55, label: 'Law enforcement' },
+  { value: 60, label: 'Passenger' },
+  { value: 70, label: 'Cargo' },
+  { value: 80, label: 'Tanker' },
+  { value: 90, label: 'Other' },
+] as const

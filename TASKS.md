@@ -12,18 +12,18 @@ Legend: `[ ]` pending · `[~]` in progress · `[x]` done · `[!]` blocked
 
 Owner chính: **TL + DO** (scaffold), mọi người setup local.
 
-- [ ] **T0.1** [DO] Tạo `docker-compose.yml`: timescaledb, redis, backend, frontend
-- [ ] **T0.2** [DO] Tạo `.env.example` với tất cả env var cần thiết
-- [ ] **T0.3** [TL] Scaffolding backend: `pyproject.toml`, `app/` structure, FastAPI app factory + lifespan
-- [ ] **T0.4** [TL] Scaffolding frontend: Vite + React + TS, tailwind, deck.gl, maplibre-gl, react-query, zustand
-- [ ] **T0.5** [BE1] `core/config.py`: pydantic-settings (DB_URL, REDIS_URL, AISSTREAM_API_KEY, BBOX)
-- [ ] **T0.6** [BE1] `core/db.py`: async SQLAlchemy engine + session factory
-- [ ] **T0.7** [BE1] `core/redis.py`: async redis client
-- [ ] **T0.8** [BE1] Alembic init + migration tạo `vessels` + `position_reports` (hypertable)
-- [ ] **T0.9** [BE1] `ingestion/aisstream_client.py` bản nháp: connect WS, nhận 1 message, log ra
-- [ ] **T0.10** [FE1] `components/map/MapView.tsx`: MapLibre container render 1 point hardcode
-- [ ] **T0.11** [TL] E2E smoke: WS → decode → DB → API → map hiển thị 1 tàu
-- [ ] **T0.12** [DO] CI: GitHub Actions chạy lint + typecheck (ruff, mypy, eslint, tsc)
+- [x] **T0.1** [DO] Tạo `docker-compose.yml`: timescaledb, redis, backend, frontend
+- [x] **T0.2** [DO] Tạo `.env.example` với tất cả env var cần thiết
+- [x] **T0.3** [TL] Scaffolding backend: `pyproject.toml`, `app/` structure, FastAPI app factory + lifespan
+- [x] **T0.4** [TL] Scaffolding frontend: Vite + React + TS, tailwind, deck.gl, maplibre-gl, react-query, zustand
+- [x] **T0.5** [BE1] `core/config.py`: pydantic-settings (DB_URL, REDIS_URL, AISSTREAM_API_KEY, BBOX)
+- [x] **T0.6** [BE1] `core/db.py`: async SQLAlchemy engine + session factory
+- [x] **T0.7** [BE1] `core/redis.py`: async redis client
+- [x] **T0.8** [BE1] Alembic init + migration tạo `vessels` + `position_reports` (hypertable)
+- [x] **T0.9** [BE1] `ingestion/aisstream_client.py` bản nháp: connect WS, nhận 1 message, log ra
+- [x] **T0.10** [FE1] `components/map/MapView.tsx`: MapLibre container render 1 point hardcode
+- [x] **T0.11** [TL] E2E smoke: WS → decode → DB → API → map hiển thị 1 tàu
+- [x] **T0.12** [DO] CI: GitHub Actions chạy lint + typecheck (ruff, mypy, eslint, tsc)
 
 > **Demo Sprint 0**: `docker-compose up` → bản đồ hiển thị 1 tàu (data thật từ AISStream).
 
@@ -31,15 +31,15 @@ Owner chính: **TL + DO** (scaffold), mọi người setup local.
 
 Owner chính: **BE1** (module khó nhất).
 
-- [ ] **T1.1** [BE1] `ingestion/decoder.py`: decode tất cả AIS message types qua `pyais` + normalize fields
-- [ ] **T1.2** [BE1] Unit test `decoder.py`: type 1/2/3/5/18/19/24, edge case malformed payload
-- [ ] **T1.3** [BE1] `ingestion/writer.py`: upsert `vessels` (static type 5/24) + insert `position_reports` (dynamic)
-- [ ] **T1.4** [BE1] `ingestion/writer.py`: upsert Redis `pos:{mmsi}` hash (lat/lon/sog/cog/heading/ts), TTL 1h
-- [ ] **T1.5** [BE1] Reconnect exponential backoff trong `aisstream_client.py` (1s→2s→4s...max 60s)
-- [ ] **T1.6** [BE1] BBox filter khi subscribe AISStream
-- [ ] **T1.7** [BE1] Structured logging + error metrics (decode error count, msg/sec)
-- [ ] **T1.8** [BE2] `models/` ORM: Vessel, PositionReport, Geofence, Alert (match schema ARCHITECTURE.md)
-- [ ] **T1.9** [BE2] `schemas/` pydantic: VesselResponse, PositionResponse, PaginatedResponse
+- [x] **T1.1** [BE1] `ingestion/decoder.py`: decode tất cả AIS message types qua `pyais` + normalize fields
+- [x] **T1.2** [BE1] Unit test `decoder.py`: type 1/2/3/5/18/19/24, edge case malformed payload
+- [x] **T1.3** [BE1] `ingestion/writer.py`: upsert `vessels` (static type 5/24) + insert `position_reports` (dynamic)
+- [x] **T1.4** [BE1] `ingestion/writer.py`: upsert Redis `pos:{mmsi}` hash (lat/lon/sog/cog/heading/ts), TTL 1h
+- [x] **T1.5** [BE1] Reconnect exponential backoff trong `aisstream_client.py` (1s→2s→4s...max 60s)
+- [x] **T1.6** [BE1] BBox filter khi subscribe AISStream
+- [x] **T1.7** [BE1] Structured logging + error metrics (decode error count, msg/sec)
+- [x] **T1.8** [BE2] `models/` ORM: Vessel, PositionReport, Geofence, Alert (match schema ARCHITECTURE.md)
+- [x] **T1.9** [BE2] `schemas/` pydantic: VesselResponse, PositionResponse, PaginatedResponse
 - [ ] **T1.10** [DO] Grafana + Prometheus: dashboard msg/sec, DB size, Redis ops
 
 > **Demo Sprint 1**: Ingestion chạy ổn định, DB có data thật, Redis có latest position.
@@ -48,20 +48,20 @@ Owner chính: **BE1** (module khó nhất).
 
 Owner chính: **BE2** (API) + **FE1** (map).
 
-- [ ] **T2.1** [BE2] `api/vessels.py`: `GET /vessels/positions?bbox=...&types=...` (đọc Redis)
-- [ ] **T2.2** [BE2] `api/vessels.py`: `GET /vessels/{mmsi}` (đọc `vessels` table)
-- [ ] **T2.3** [BE2] `api/vessels.py`: `GET /vessels/{mmsi}/track?from=...&to=...` (query hypertable)
-- [ ] **T2.4** [BE2] Integration test cho 3 endpoint trên (testcontainers)
-- [ ] **T2.5** [BE2] Error handler RFC 7807 + pagination wrapper
-- [ ] **T2.6** [FE1] `api/client.ts` + `api/vessels.ts`: react-query hooks (`useVesselPositions`, `useVessel`, `useVesselTrack`)
-- [ ] **T2.7** [FE1] `types/index.ts`: TS types match backend schemas
-- [ ] **T2.8** [FE1] `components/map/VesselLayer.tsx`: deck.gl ScatterplotLayer + icon theo heading
-- [ ] **T2.9** [FE1] `components/map/ClusterLayer.tsx`: clustering khi zoom out (supercluster)
-- [ ] **T2.10** [FE1] `hooks/useViewport.ts`: map bbox state + trigger refetch khi move/zoom
-- [ ] **T2.11** [FE1] `store/mapStore.ts`: zustand (viewport, filters, selected MMSI)
-- [ ] **T2.12** [FE2] `components/panel/VesselInfo.tsx`: click tàu → hiện thông tin (name, MMSI, sog, cog, type, destination)
-- [ ] **T2.13** [FE2] `components/panel/Filters.tsx`: lọc theo ship_type, sog range
-- [ ] **T2.14** [FE2] Layout `App.tsx`: map full screen + sidebar panel + filter bar
+- [x] **T2.1** [BE2] `api/vessels.py`: `GET /vessels/positions?bbox=...&types=...` (đọc Redis)
+- [x] **T2.2** [BE2] `api/vessels.py`: `GET /vessels/{mmsi}` (đọc `vessels` table)
+- [x] **T2.3** [BE2] `api/vessels.py`: `GET /vessels/{mmsi}/track?from=...&to=...` (query hypertable)
+- [x] **T2.4** [BE2] Integration test cho 3 endpoint trên (testcontainers)
+- [x] **T2.5** [BE2] Error handler RFC 7807 + pagination wrapper
+- [x] **T2.6** [FE1] `api/client.ts` + `api/vessels.ts`: react-query hooks (`useVesselPositions`, `useVessel`, `useVesselTrack`)
+- [x] **T2.7** [FE1] `types/index.ts`: TS types match backend schemas
+- [x] **T2.8** [FE1] `components/map/VesselLayer.tsx`: deck.gl ScatterplotLayer + icon theo heading
+- [x] **T2.9** [FE1] `components/map/ClusterLayer.tsx`: clustering khi zoom out (supercluster)
+- [x] **T2.10** [FE1] `hooks/useViewport.ts`: map bbox state + trigger refetch khi move/zoom
+- [x] **T2.11** [FE1] `store/mapStore.ts`: zustand (viewport, filters, selected MMSI)
+- [x] **T2.12** [FE2] `components/panel/VesselInfo.tsx`: click tàu → hiện thông tin (name, MMSI, sog, cog, type, destination)
+- [x] **T2.13** [FE2] `components/panel/Filters.tsx`: lọc theo ship_type, sog range
+- [x] **T2.14** [FE2] Layout `App.tsx`: map full screen + sidebar panel + filter bar
 
 > **Demo Sprint 2**: "MarineTraffic cơ bản" — tàu hiển thị, cluster, click xem info, lọc.
 
@@ -69,18 +69,18 @@ Owner chính: **BE2** (API) + **FE1** (map).
 
 Owner chính: **BE2** (realtime) + **FE2** (dashboard).
 
-- [ ] **T3.1** [BE2] `realtime/sse.py`: SSE endpoint `/sse/positions?bbox=...` + subscriber manager
-- [ ] **T3.2** [BE2] `realtime/broadcaster.py`: batch loop 1s đọc Redis → push tới subscribers (filter bbox)
-- [ ] **T3.3** [BE2] Heartbeat 15s + cleanup subscriber rời
-- [ ] **T3.4** [BE2] Backpressure: drop stale positions, max clients config
-- [ ] **T3.5** [BE1] Continuous aggregate `vessel_counts_hourly` (migration)
-- [ ] **T3.6** [BE2] `api/stats.py`: `GET /stats/overview` (count tàu active, avg sog) + `GET /stats/by-type`
-- [ ] **T3.7** [FE1] `hooks/useSSE.ts`: EventSource wrapper + auto-reconnect + diff update markers
-- [ ] **T3.8** [FE1] Tích hợp SSE vào VesselLayer: update position realtime không re-create marker
-- [ ] **T3.9** [FE2] `components/dashboard/StatsCards.tsx`: số tàu active, tốc độ TB, vùng có nhiều tàu
-- [ ] **T3.10** [FE2] `components/dashboard/Charts.tsx`: recharts (bar chart theo ship_type, line chart theo giờ)
-- [ ] **T3.11** [FE2] Dashboard layout (toggle panel map/dashboard)
-- [ ] **T3.12** [TL] E2E smoke test: ingestion → Redis → SSE → map realtime
+- [x] **T3.1** [BE2] `realtime/sse.py`: SSE endpoint `/sse/positions?bbox=...` + subscriber manager
+- [x] **T3.2** [BE2] `realtime/broadcaster.py`: batch loop 1s đọc Redis → push tới subscribers (filter bbox)
+- [x] **T3.3** [BE2] Heartbeat 15s + cleanup subscriber rời
+- [x] **T3.4** [BE2] Backpressure: drop stale positions, max clients config
+- [x] **T3.5** [BE1] Continuous aggregate `vessel_counts_hourly` (migration)
+- [x] **T3.6** [BE2] `api/stats.py`: `GET /stats/overview` (count tàu active, avg sog) + `GET /stats/by-type`
+- [x] **T3.7** [FE1] `hooks/useSSE.ts`: EventSource wrapper + auto-reconnect + diff update markers
+- [x] **T3.8** [FE1] Tích hợp SSE vào VesselLayer: update position realtime không re-create marker
+- [x] **T3.9** [FE2] `components/dashboard/StatsCards.tsx`: số tàu active, tốc độ TB, vùng có nhiều tàu
+- [x] **T3.10** [FE2] `components/dashboard/Charts.tsx`: recharts (bar chart theo ship_type, line chart theo giờ)
+- [x] **T3.11** [FE2] Dashboard layout (toggle panel map/dashboard)
+- [x] **T3.12** [TL] E2E smoke test: ingestion → Redis → SSE → map realtime
 
 > **Demo Sprint 3**: Map realtime + dashboard thống kê. **= Phase 1 DONE**
 
@@ -146,7 +146,10 @@ Owner chính: **BE1** + **FE1**.
 
 Ghi các item technical debt phát sinh trong quá trình làm (không thuộc sprint nào).
 
-- [ ] (chưa có)
+- [ ] TD-01: BatchWriter đã tạo nhưng chưa tích hợp vào aisstream_client (hiện write single message)
+- [ ] TD-02: VesselLayer chưa có icon rotation theo heading (đang dùng scatterplot tròn)
+- [ ] TD-03: Grafana + Prometheus dashboard chưa setup (T1.10 defer Phase 3)
+- [ ] TD-04: Frontend bundle > 500kB, cần code-split (deck.gl/recharts lazy load)
 
 ---
 

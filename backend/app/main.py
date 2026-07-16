@@ -1,13 +1,18 @@
-from contextlib import asynccontextmanager
+import asyncio
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.stats import router as stats_router
 from app.api.vessels import router as vessels_router
 from app.core.config import get_settings
+from app.core.errors import register_error_handlers
 from app.core.logging import get_logger, setup_logging
 from app.core.redis import close_redis, get_redis
+from app.realtime.broadcaster import subscriber_manager
+from app.realtime.sse import router as sse_router
 
 
 @asynccontextmanager
@@ -25,14 +30,28 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await redis.ping()
     logger.info("redis_connected", url=settings.redis_url)
 
+    from app.ingestion.aisstream_client import connect_aisstream
+
+    ingestion_task = asyncio.create_task(connect_aisstream())
+    logger.info("ingestion_task_started")
+
+    await subscriber_manager.start_broadcaster(interval=settings.sse_batch_interval_seconds)
+    logger.info("sse_broadcaster_started")
+
     yield
 
+    await subscriber_manager.stop_broadcaster()
+    ingestion_task.cancel()
+    try:
+        await ingestion_task
+    except (asyncio.CancelledError, Exception) as exc:
+        if not isinstance(exc, asyncio.CancelledError):
+            logger.warning("ingestion_task_stopped_with_error", error=str(exc))
     await close_redis()
     logger.info("backend_stopped")
 
 
 def create_app() -> FastAPI:
-    settings = get_settings()
     app = FastAPI(
         title="MarineAnalytics API",
         version="0.1.0",
@@ -51,6 +70,9 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(vessels_router)
+    app.include_router(stats_router)
+    app.include_router(sse_router)
+    register_error_handlers(app)
 
     @app.get("/health")
     async def health() -> dict[str, str]:

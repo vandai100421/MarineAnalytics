@@ -1,9 +1,13 @@
 import { useMemo, useState } from 'react'
-import Map from 'react-map-gl'
-import { ScatterplotLayer } from 'deck.gl'
+import MapGL from 'react-map-gl'
 import { DeckGL } from 'deck.gl'
 import { useViewport } from '../../hooks/useViewport'
 import { useMapStore } from '../../store/mapStore'
+import { useVesselPositions } from '../../api/vessels'
+import { useSSE } from '../../hooks/useSSE'
+import { VesselLayer } from './VesselLayer'
+import { ClusterLayer } from './ClusterLayer'
+import type { VesselPosition } from '../../types'
 
 const MAP_STYLE_URL = import.meta.env.VITE_MAP_STYLE_URL ?? '/styles/osm-style.json'
 
@@ -15,40 +19,66 @@ const INITIAL_VIEW_STATE = {
   bearing: 0,
 }
 
+const CLUSTER_ZOOM_THRESHOLD = 8
+
 export function MapView() {
   const { onMove } = useViewport()
+  const bbox = useMapStore((state) => state.bbox)
+  const filters = useMapStore((state) => state.filters)
+  const selectedMmsi = useMapStore((state) => state.selectedMmsi)
   const setSelectedMmsi = useMapStore((state) => state.setSelectedMmsi)
+  const realtimePositions = useMapStore((state) => state.realtimePositions)
+  const updatePositions = useMapStore((state) => state.updatePositions)
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE)
 
+  const { data: restPositions } = useVesselPositions(bbox, filters.minSog)
+
+  const bboxStr = useMemo(() => {
+    if (!bbox) return null
+    return `${bbox.minLon},${bbox.minLat},${bbox.maxLon},${bbox.maxLat}`
+  }, [bbox])
+
+  useSSE({
+    bbox: bboxStr,
+    minSog: filters.minSog,
+    onPositions: updatePositions,
+  })
+
+  const allPositions = useMemo(() => {
+    const merged = new Map<number, VesselPosition>()
+    for (const p of restPositions ?? []) {
+      merged.set(p.mmsi, p)
+    }
+    for (const p of realtimePositions.values()) {
+      merged.set(p.mmsi, p)
+    }
+    return Array.from(merged.values())
+  }, [restPositions, realtimePositions])
+
   const layers = useMemo(() => {
+    if (viewState.zoom < CLUSTER_ZOOM_THRESHOLD && allPositions.length > 0) {
+      const [, clusterText] = ClusterLayer({
+        data: allPositions,
+        zoom: viewState.zoom,
+        bbox: bbox ?? { minLon: -180, minLat: -85, maxLon: 180, maxLat: 85 },
+        onSelect: setSelectedMmsi,
+      })
+      return [clusterText]
+    }
+
     return [
-      new ScatterplotLayer({
-        id: 'vessel-points',
-        data: [
-          {
-            position: [INITIAL_VIEW_STATE.longitude, INITIAL_VIEW_STATE.latitude],
-            mmsi: 123456789,
-            color: [14, 165, 233],
-          },
-        ],
-        getPosition: (d: { position: [number, number] }) => d.position,
-        getRadius: 1000,
-        radiusMinPixels: 6,
-        radiusMaxPixels: 20,
-        getFillColor: (d: { color: [number, number, number] }) => d.color,
-        pickable: true,
-        onClick: (info: { object?: { mmsi?: number } }) => {
-          if (info.object?.mmsi) {
-            setSelectedMmsi(info.object.mmsi)
-          }
-        },
+      VesselLayer({
+        data: allPositions,
+        filters,
+        onSelect: setSelectedMmsi,
+        selectedMmsi,
       }),
     ]
-  }, [setSelectedMmsi])
+  }, [allPositions, viewState.zoom, filters, selectedMmsi, setSelectedMmsi, bbox])
 
   return (
     <div className="h-full w-full">
-      <Map
+      <MapGL
         mapStyle={MAP_STYLE_URL}
         initialViewState={viewState}
         onMove={(evt) => {
@@ -63,7 +93,7 @@ export function MapView() {
           layers={layers}
           getCursor={() => 'crosshair'}
         />
-      </Map>
+      </MapGL>
     </div>
   )
 }
