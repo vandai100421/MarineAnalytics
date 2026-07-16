@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import type { ViewState } from 'react-map-gl'
+import type { ViewState } from 'react-map-gl/maplibre'
 import type { BoundingBox } from '../types'
 import { useMapStore } from '../store/mapStore'
 

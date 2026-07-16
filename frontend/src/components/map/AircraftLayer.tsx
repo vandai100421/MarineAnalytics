@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { ScatterplotLayer } from 'deck.gl'
 import type { AircraftPosition } from '../../types'
 
@@ -8,8 +7,8 @@ interface AircraftLayerProps {
   selectedHex: string | null
 }
 
-export function AircraftLayer({ data, onSelect, selectedHex }: AircraftLayerProps) {
-  const layer = new ScatterplotLayer({
+export function createAircraftLayer({ data, onSelect, selectedHex }: AircraftLayerProps) {
+  return new ScatterplotLayer({
     id: 'aircraft-layer',
     data,
     getPosition: (d: AircraftPosition) => [d.lon, d.lat],
@@ -30,8 +29,4 @@ export function AircraftLayer({ data, onSelect, selectedHex }: AircraftLayerProp
       }
     },
   })
-
-  void useMemo
-
-  return layer
 }

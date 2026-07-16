@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { ScatterplotLayer } from 'deck.gl'
 import type { VesselPosition, VesselFilters } from '../../types'
 
@@ -11,16 +10,14 @@ interface VesselLayerProps {
   selectedMmsi: number | null
 }
 
-export function VesselLayer({ data, filters, onSelect, selectedMmsi }: VesselLayerProps) {
-  const filtered = useMemo(() => {
-    return data.filter((v) => {
-      if (filters.minSog !== undefined && v.sog < filters.minSog) return false
-      if (filters.maxSog !== undefined && v.sog > filters.maxSog) return false
-      return true
-    })
-  }, [data, filters])
+export function createVesselLayer({ data, filters, onSelect, selectedMmsi }: VesselLayerProps) {
+  const filtered = data.filter((v) => {
+    if (filters.minSog !== undefined && v.sog < filters.minSog) return false
+    if (filters.maxSog !== undefined && v.sog > filters.maxSog) return false
+    return true
+  })
 
-  const layer = new ScatterplotLayer({
+  return new ScatterplotLayer({
     id: 'vessel-layer',
     data: filtered,
     getPosition: (d: VesselPosition) => [d.lon, d.lat],
@@ -41,6 +38,4 @@ export function VesselLayer({ data, filters, onSelect, selectedMmsi }: VesselLay
       }
     },
   })
-
-  return layer
 }

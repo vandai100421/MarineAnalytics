@@ -1,17 +1,16 @@
 import { useMemo, useState } from 'react'
-import MapGL from 'react-map-gl'
+import MapGL from 'react-map-gl/maplibre'
 import { DeckGL } from 'deck.gl'
 import type { Layer } from '@deck.gl/core'
 import { PathLayer } from '@deck.gl/layers'
-import { useViewport } from '../../hooks/useViewport'
 import { useMapStore } from '../../store/mapStore'
 import { useVesselPositions, useVesselTrack } from '../../api/vessels'
 import { useAircraftPositions } from '../../api/aircraft'
 import { useSSE } from '../../hooks/useSSE'
-import { VesselLayer } from './VesselLayer'
-import { ClusterLayer } from './ClusterLayer'
-import { HeatmapLayer } from './HeatmapLayer'
-import { AircraftLayer } from './AircraftLayer'
+import { createVesselLayer } from './VesselLayer'
+import { createClusterLayer } from './ClusterLayer'
+import { createHeatmapLayer } from './HeatmapLayer'
+import { createAircraftLayer } from './AircraftLayer'
 import type { VesselPosition } from '../../types'
 
 const MAP_STYLE_URL = import.meta.env.VITE_MAP_STYLE_URL ?? '/styles/osm-style.json'
@@ -27,7 +26,6 @@ const INITIAL_VIEW_STATE = {
 const CLUSTER_ZOOM_THRESHOLD = 8
 
 export function MapView() {
-  const { onMove } = useViewport()
   const bbox = useMapStore((state) => state.bbox)
   const filters = useMapStore((state) => state.filters)
   const selectedMmsi = useMapStore((state) => state.selectedMmsi)
@@ -38,7 +36,7 @@ export function MapView() {
   const updatePositions = useMapStore((state) => state.updatePositions)
   const mapMode = useMapStore((state) => state.mapMode)
   const playbackIndex = useMapStore((state) => state.playbackIndex)
-  const [viewState, setViewState] = useState(INITIAL_VIEW_STATE)
+  const [zoom, setZoom] = useState(INITIAL_VIEW_STATE.zoom)
 
   const { data: restPositions } = useVesselPositions(bbox, filters.minSog)
   const { data: aircraftData } = useAircraftPositions(bbox)
@@ -75,7 +73,7 @@ export function MapView() {
     const result: Layer[] = []
 
     if (mapMode === 'heatmap' && heatmapData.length > 0) {
-      result.push(HeatmapLayer({ data: heatmapData }))
+      result.push(createHeatmapLayer({ data: heatmapData }))
       return result
     }
 
@@ -102,17 +100,17 @@ export function MapView() {
     const showAircraft = mapMode === 'aircraft' || mapMode === 'both'
 
     if (showVessels) {
-      if (viewState.zoom < CLUSTER_ZOOM_THRESHOLD && allPositions.length > 0) {
-        const [, clusterText] = ClusterLayer({
+      if (zoom < CLUSTER_ZOOM_THRESHOLD && allPositions.length > 0) {
+        const [, clusterText] = createClusterLayer({
           data: allPositions,
-          zoom: viewState.zoom,
+          zoom,
           bbox: bbox ?? { minLon: -180, minLat: -85, maxLon: 180, maxLat: 85 },
           onSelect: setSelectedMmsi,
         })
         result.push(clusterText)
       } else {
         result.push(
-          VesselLayer({
+          createVesselLayer({
             data: allPositions,
             filters,
             onSelect: setSelectedMmsi,
@@ -124,7 +122,7 @@ export function MapView() {
 
     if (showAircraft && aircraftData) {
       result.push(
-        AircraftLayer({
+        createAircraftLayer({
           data: aircraftData,
           onSelect: setSelectedHex,
           selectedHex,
@@ -137,7 +135,7 @@ export function MapView() {
     allPositions,
     heatmapData,
     mapMode,
-    viewState.zoom,
+    zoom,
     filters,
     selectedMmsi,
     setSelectedMmsi,
@@ -151,22 +149,30 @@ export function MapView() {
 
   return (
     <div className="h-full w-full">
-      <MapGL
-        mapStyle={MAP_STYLE_URL}
-        initialViewState={viewState}
-        onMove={(evt) => {
-          setViewState(evt.viewState)
-          onMove(evt.viewState)
+      <DeckGL
+        initialViewState={INITIAL_VIEW_STATE}
+        controller={true}
+        layers={layers}
+        getCursor={() => 'crosshair'}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onViewStateChange={(evt: any) => {
+          const { longitude, latitude, zoom: newZoom } = evt.viewState
+          setZoom(newZoom)
+          const span = 360 / Math.pow(2, newZoom)
+          const halfSpan = span / 2
+          useMapStore.getState().setBbox({
+            minLon: longitude - halfSpan,
+            minLat: Math.max(-90, latitude - halfSpan),
+            maxLon: longitude + halfSpan,
+            maxLat: Math.min(90, latitude + halfSpan),
+          })
         }}
-        style={{ width: '100%', height: '100%' }}
       >
-        <DeckGL
-          initialViewState={viewState}
-          controller={true}
-          layers={layers}
-          getCursor={() => 'crosshair'}
+        <MapGL
+          mapStyle={MAP_STYLE_URL}
+          style={{ width: '100%', height: '100%' }}
         />
-      </MapGL>
+      </DeckGL>
 
       <div className="absolute bottom-4 left-4 z-10 flex gap-2">
         {(['vessels', 'aircraft', 'both', 'heatmap'] as const).map((mode) => (
