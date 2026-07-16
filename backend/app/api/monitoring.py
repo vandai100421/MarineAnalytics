@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Response
 
+from app.core.redis import get_redis
 from app.ingestion.metrics import metrics
 from app.realtime.broadcaster import subscriber_manager
 
@@ -8,6 +9,11 @@ router = APIRouter(tags=["monitoring"])
 
 @router.get("/metrics")
 async def prometheus_metrics() -> Response:
+    redis = await get_redis()
+    redis_count = 0
+    async for _ in redis.scan_iter(match="pos:*", count=500):
+        redis_count += 1
+
     lines = [
         "# HELP marineanalytics_messages_total Total AIS messages received",
         "# TYPE marineanalytics_messages_total counter",
@@ -27,7 +33,7 @@ async def prometheus_metrics() -> Response:
         "",
         "# HELP marineanalytics_active_vessels Active vessels in Redis",
         "# TYPE marineanalytics_active_vessels gauge",
-        f"marineanalytics_active_vessels {subscriber_manager.client_count}",
+        f"marineanalytics_active_vessels {redis_count}",
         "",
         "# HELP marineanalytics_sse_subscribers Connected SSE clients",
         "# TYPE marineanalytics_sse_subscribers gauge",
