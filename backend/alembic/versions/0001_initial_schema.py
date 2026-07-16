@@ -5,16 +5,18 @@ Revises:
 Create Date: 2026-07-16
 
 """
-from typing import Sequence, Union
+
+from typing import Union
+from collections.abc import Sequence
 
 import sqlalchemy as sa
 from alembic import op
 from geoalchemy2 import Geography
 
 revision: str = "0001"
-down_revision: Union[str, None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
@@ -51,10 +53,7 @@ def upgrade() -> None:
     )
     op.create_index("idx_pos_mmsi_ts", "position_reports", ["mmsi", "ts"])
 
-    op.execute(
-        "SELECT create_hypertable('position_reports', 'ts', "
-        "if_not_exists => TRUE)"
-    )
+    op.execute("SELECT create_hypertable('position_reports', 'ts', if_not_exists => TRUE)")
 
     op.create_table(
         "geofences",
@@ -63,9 +62,7 @@ def upgrade() -> None:
         sa.Column("type", sa.String, nullable=False),
         sa.Column("geom", Geography("POLYGON", srid=4326), nullable=False),
         sa.Column("description", sa.Text),
-        sa.Column(
-            "created_at", sa.DateTime(timezone=True), server_default=sa.func.now()
-        ),
+        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
     )
 
     op.create_table(
@@ -77,9 +74,7 @@ def upgrade() -> None:
             sa.Integer,
             sa.ForeignKey("geofences.id", name="fk_alerts_geofences"),
         ),
-        sa.Column(
-            "ts", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()
-        ),
+        sa.Column("ts", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
         sa.Column("event_type", sa.String, nullable=False),
         sa.Column("lat", sa.Float),
         sa.Column("lon", sa.Float),

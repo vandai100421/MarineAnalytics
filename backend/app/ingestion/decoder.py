@@ -1,20 +1,24 @@
 from dataclasses import dataclass
 from datetime import datetime
 
-from pyais import decode
-
 from app.core.logging import get_logger
+from app.ingestion.ship_types import get_ship_type_name
 
 logger = get_logger("decoder")
 
-DYNAMIC_MESSAGE_TYPES = {"PositionReport", "PositionReportInt", "StandardClassBPositionReport"}
+DYNAMIC_MESSAGE_TYPES = {
+    "PositionReport",
+    "PositionReportInt",
+    "StandardClassBPositionReport",
+    "LongRangeAisBroadcast",
+}
 STATIC_MESSAGE_TYPES = {"ShipStaticData", "StaticDataReport"}
 
 
 @dataclass
 class DecodedMessage:
     mmsi: int
-    kind: str  # "position" | "static"
+    kind: str
     ts: datetime | None
     lat: float | None = None
     lon: float | None = None
@@ -25,6 +29,7 @@ class DecodedMessage:
     rot: float | None = None
     name: str | None = None
     ship_type: int | None = None
+    ship_type_name: str | None = None
     callsign: str | None = None
     imo: int | None = None
     dim_a: int | None = None
@@ -49,7 +54,7 @@ def decode_message(
     if message_type in DYNAMIC_MESSAGE_TYPES:
         return _decode_dynamic(message_type, mmsi, ts, payload)
     if message_type in STATIC_MESSAGE_TYPES:
-        return _decode_static(message_type, mmsi, ts, payload)
+        return _decode_static(mmsi, ts, payload)
 
     return None
 
@@ -60,17 +65,17 @@ def _decode_dynamic(
     ts: datetime | None,
     payload: dict[str, object],
 ) -> DecodedMessage | None:
-    lat = payload.get("Latitude")
-    lon = payload.get("Longitude")
+    lat = _to_float(payload.get("Latitude"))
+    lon = _to_float(payload.get("Longitude"))
     if lat is None or lon is None:
         return None
 
-    return DecodedMessage(
+    msg = DecodedMessage(
         mmsi=mmsi,
         kind="position",
         ts=ts,
-        lat=float(lat),
-        lon=float(lon),
+        lat=lat,
+        lon=lon,
         sog=_to_float(payload.get("Sog")),
         cog=_to_float(payload.get("Cog")),
         heading=_to_float(payload.get("TrueHeading")),
@@ -78,39 +83,36 @@ def _decode_dynamic(
         rot=_to_float(payload.get("RateOfTurn")),
     )
 
+    if message_type == "StandardClassBPositionReport":
+        name = _clean_str(payload.get("Name"))
+        ship_type = _to_int(payload.get("Type"))
+        callsign = _clean_str(payload.get("CallSign"))
+        if name or ship_type or callsign:
+            msg.name = name
+            msg.ship_type = ship_type
+            msg.ship_type_name = get_ship_type_name(ship_type)
+            msg.callsign = callsign
+            dim_a, dim_b, dim_c, dim_d = _extract_dimensions(payload)
+            msg.dim_a = dim_a
+            msg.dim_b = dim_b
+            msg.dim_c = dim_c
+            msg.dim_d = dim_d
+
+    return msg
+
 
 def _decode_static(
-    message_type: str,
     mmsi: int,
     ts: datetime | None,
     payload: dict[str, object],
 ) -> DecodedMessage | None:
-    name = payload.get("Name")
-    if isinstance(name, str):
-        name = name.strip("@").strip()
-
+    name = _clean_str(payload.get("Name"))
     ship_type = _to_int(payload.get("Type"))
-    callsign = payload.get("CallSign")
-    if isinstance(callsign, str):
-        callsign = callsign.strip("@").strip()
-
-    dim_a = _to_int(payload.get("Dimension", {}).get("A")) if isinstance(
-        payload.get("Dimension"), dict
-    ) else None
-    dim_b = _to_int(payload.get("Dimension", {}).get("B")) if isinstance(
-        payload.get("Dimension"), dict
-    ) else None
-    dim_c = _to_int(payload.get("Dimension", {}).get("C")) if isinstance(
-        payload.get("Dimension"), dict
-    ) else None
-    dim_d = _to_int(payload.get("Dimension", {}).get("D")) if isinstance(
-        payload.get("Dimension"), dict
-    ) else None
-
+    callsign = _clean_str(payload.get("CallSign"))
     imo = _to_int(payload.get("ImoNumber"))
-    destination = payload.get("Destination")
-    if isinstance(destination, str):
-        destination = destination.strip("@").strip()
+    destination = _clean_str(payload.get("Destination"))
+    eta = _parse_eta(payload.get("Eta"))
+    dim_a, dim_b, dim_c, dim_d = _extract_dimensions(payload)
 
     return DecodedMessage(
         mmsi=mmsi,
@@ -118,6 +120,7 @@ def _decode_static(
         ts=ts,
         name=name,
         ship_type=ship_type,
+        ship_type_name=get_ship_type_name(ship_type),
         callsign=callsign,
         imo=imo,
         dim_a=dim_a,
@@ -125,11 +128,26 @@ def _decode_static(
         dim_c=dim_c,
         dim_d=dim_d,
         destination=destination,
+        eta=eta,
+    )
+
+
+def _extract_dimensions(
+    payload: dict[str, object],
+) -> tuple[int | None, int | None, int | None, int | None]:
+    dimension = payload.get("Dimension")
+    if not isinstance(dimension, dict):
+        return None, None, None, None
+    return (
+        _to_int(dimension.get("A")),
+        _to_int(dimension.get("B")),
+        _to_int(dimension.get("C")),
+        _to_int(dimension.get("D")),
     )
 
 
 def _extract_mmsi(metadata: dict[str, object], payload: dict[str, object]) -> int | None:
-    mmsi = metadata.get("MMSI") or payload.get("MMSI")
+    mmsi = metadata.get("MMSI") or payload.get("MMSI") or payload.get("UserID")
     return _to_int(mmsi)
 
 
@@ -142,11 +160,27 @@ def _parse_timestamp(value: object) -> datetime | None:
         return None
 
 
+def _parse_eta(value: object) -> datetime | None:
+    if value is None:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
+
+
+def _clean_str(value: object) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip("@").strip()
+    return text or None
+
+
 def _to_float(value: object) -> float | None:
     if value is None:
         return None
     try:
-        return float(value)
+        return float(value)  # type: ignore[arg-type]
     except (ValueError, TypeError):
         return None
 
@@ -155,6 +189,6 @@ def _to_int(value: object) -> int | None:
     if value is None:
         return None
     try:
-        return int(value)
+        return int(float(value))  # type: ignore[arg-type]
     except (ValueError, TypeError):
         return None

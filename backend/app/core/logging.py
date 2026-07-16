@@ -21,12 +21,11 @@ def setup_logging() -> None:
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.dev.ConsoleRenderer(),
         ],
-        wrapper_class=structlog.make_filtering_bound_logger(
-            getattr(logging, level, logging.INFO)
-        ),
+        wrapper_class=structlog.make_filtering_bound_logger(getattr(logging, level, logging.INFO)),
         cache_logger_on_first_use=True,
     )
 
 
 def get_logger(name: str | None = None) -> structlog.BoundLogger:
-    return structlog.get_logger(name)
+    logger: structlog.BoundLogger = structlog.get_logger(name)
+    return logger

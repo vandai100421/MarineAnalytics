@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Float, Index, SmallInteger, Text, func
+from sqlalchemy import BigInteger, Float, Index, SmallInteger, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base
@@ -21,6 +21,4 @@ class PositionReport(Base):
     rot: Mapped[float | None] = mapped_column(Float)
     source: Mapped[str] = mapped_column(Text, default="aisstream", server_default="aisstream")
 
-    __table_args__ = (
-        Index("idx_pos_mmsi_ts", "mmsi", "ts", postgresql_using="btree"),
-    )
+    __table_args__ = (Index("idx_pos_mmsi_ts", "mmsi", "ts", postgresql_using="btree"),)
