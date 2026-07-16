@@ -5,6 +5,8 @@ import { DeckGL } from 'deck.gl'
 import { useViewport } from '../../hooks/useViewport'
 import { useMapStore } from '../../store/mapStore'
 
+const MAP_STYLE_URL = import.meta.env.VITE_MAP_STYLE_URL ?? '/styles/osm-style.json'
+
 const INITIAL_VIEW_STATE = {
   longitude: 108.2,
   latitude: 16.0,
@@ -47,7 +49,7 @@ export function MapView() {
   return (
     <div className="h-full w-full">
       <Map
-        mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
+        mapStyle={MAP_STYLE_URL}
         initialViewState={viewState}
         onMove={(evt) => {
           setViewState(evt.viewState)
