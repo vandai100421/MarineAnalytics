@@ -29,10 +29,20 @@ async def get_positions(
     redis: Redis = Depends(get_redis),  # type: ignore[type-arg]
     session: AsyncSession = Depends(get_session),
 ) -> list[VesselPositionResponse]:
-    positions: list[VesselPositionResponse] = []
+    keys: list[str] = []
+    async for key in redis.scan_iter(match="pos:*", count=2000):
+        keys.append(key)
 
-    async for key in redis.scan_iter(match="pos:*", count=200):
-        data = await redis.hgetall(key)
+    if not keys:
+        return []
+
+    pipe = redis.pipeline()
+    for key in keys:
+        pipe.hgetall(key)
+    results = await pipe.execute()
+
+    positions: list[VesselPositionResponse] = []
+    for data in results:
         if not data:
             continue
 

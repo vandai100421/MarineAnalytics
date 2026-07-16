@@ -26,11 +26,30 @@ class AsyncScanIter:
         return key
 
 
+class MockPipeline:
+    def __init__(self) -> None:
+        self._commands: list = []
+
+    def hgetall(self, key: str) -> None:
+        self._commands.append(("hgetall", key))
+
+    async def execute(self) -> list:
+        return self._results
+
+
 @pytest.fixture
 def mock_redis():
     redis = AsyncMock()
     redis._scan_keys: list[bytes] = []
+    redis._hgetall_results: list[dict[str, str]] = []
     redis.scan_iter = MagicMock(side_effect=lambda **kwargs: AsyncScanIter(redis._scan_keys))
+
+    def _pipeline():
+        pipe = MockPipeline()
+        pipe._results = redis._hgetall_results
+        return pipe
+
+    redis.pipeline = MagicMock(side_effect=_pipeline)
     redis.hgetall = AsyncMock()
     return redis
 

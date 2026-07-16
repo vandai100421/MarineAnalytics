@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
@@ -14,25 +15,44 @@ from app.schemas.stats import ByTypeResponse, HeatmapResponse, OverviewResponse,
 
 router = APIRouter(prefix="/api/v1/stats", tags=["stats"])
 
+_overview_cache: OverviewResponse | None = None
+_overview_cache_time: float = 0.0
+_CACHE_TTL = 5.0
+
 
 @router.get("/overview", response_model=OverviewResponse)
 async def get_overview(
     session: AsyncSession = Depends(get_session),
 ) -> OverviewResponse:
-    redis = await get_redis()
-    active_count = 0
-    speeds: list[float] = []
+    global _overview_cache, _overview_cache_time
+    now = time.monotonic()
+    if _overview_cache is not None and (now - _overview_cache_time) < _CACHE_TTL:
+        return _overview_cache
 
-    async for key in redis.scan_iter(match="pos:*", count=500):
-        data = await redis.hgetall(key)
-        if not data:
-            continue
-        active_count += 1
-        try:
-            sog = float(data.get("sog", 0))
-            speeds.append(sog)
-        except (ValueError, TypeError):
-            pass
+    redis = await get_redis()
+    keys: list[str] = []
+    async for key in redis.scan_iter(match="pos:*", count=2000):
+        keys.append(key)
+
+    if not keys:
+        active_count = 0
+        speeds: list[float] = []
+    else:
+        pipe = redis.pipeline()
+        for key in keys:
+            pipe.hgetall(key)
+        results = await pipe.execute()
+
+        active_count = 0
+        speeds = []
+        for data in results:
+            if not data:
+                continue
+            active_count += 1
+            try:
+                speeds.append(float(data.get("sog", 0)))
+            except (ValueError, TypeError):
+                pass
 
     avg_sog = sum(speeds) / len(speeds) if speeds else 0.0
 
@@ -40,11 +60,14 @@ async def get_overview(
     result = await session.execute(stmt)
     total_vessels = result.scalar_one()
 
-    return OverviewResponse(
+    response = OverviewResponse(
         active_vessels=active_count,
         total_vessels=total_vessels,
         avg_sog=round(avg_sog, 2),
     )
+    _overview_cache = response
+    _overview_cache_time = now
+    return response
 
 
 @router.get("/by-type", response_model=ByTypeResponse)

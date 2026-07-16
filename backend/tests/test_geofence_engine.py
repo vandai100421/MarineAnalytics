@@ -44,6 +44,7 @@ async def test_check_position_creates_alert_on_enter():
             "app.alerts.geofence_engine.AlertRepository",
             return_value=mock_alert_repo,
         ),
+        patch("app.alerts.geofence_engine._get_geofence_count", return_value=1),
     ):
         mock_session = AsyncMock()
         mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
@@ -91,6 +92,7 @@ async def test_check_position_dedup_skips_recent_alert():
             "app.alerts.geofence_engine.AlertRepository",
             return_value=mock_alert_repo,
         ),
+        patch("app.alerts.geofence_engine._get_geofence_count", return_value=1),
     ):
         mock_session = AsyncMock()
         mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
@@ -127,6 +129,7 @@ async def test_check_position_no_geofences_matching():
             "app.alerts.geofence_engine.AlertRepository",
             return_value=mock_alert_repo,
         ),
+        patch("app.alerts.geofence_engine._get_geofence_count", return_value=1),
     ):
         mock_session = AsyncMock()
         mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)

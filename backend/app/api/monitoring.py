@@ -1,3 +1,5 @@
+import time
+
 from fastapi import APIRouter, Response
 
 from app.core.redis import get_redis
@@ -6,12 +8,21 @@ from app.realtime.broadcaster import subscriber_manager
 
 router = APIRouter(tags=["monitoring"])
 
+_metrics_cache: str | None = None
+_metrics_cache_time: float = 0.0
+_CACHE_TTL = 5.0
+
 
 @router.get("/metrics")
 async def prometheus_metrics() -> Response:
+    global _metrics_cache, _metrics_cache_time
+    now = time.monotonic()
+    if _metrics_cache is not None and (now - _metrics_cache_time) < _CACHE_TTL:
+        return Response(content=_metrics_cache, media_type="text/plain")
+
     redis = await get_redis()
     redis_count = 0
-    async for _ in redis.scan_iter(match="pos:*", count=500):
+    async for _ in redis.scan_iter(match="pos:*", count=2000):
         redis_count += 1
 
     lines = [
@@ -46,4 +57,7 @@ async def prometheus_metrics() -> Response:
         lines.append(f'marineanalytics_messages_by_type{{type="{safe}"}} {count}')
     lines.append("")
 
-    return Response(content="\n".join(lines), media_type="text/plain")
+    content = "\n".join(lines)
+    _metrics_cache = content
+    _metrics_cache_time = now
+    return Response(content=content, media_type="text/plain")

@@ -16,12 +16,10 @@ async def test_get_positions_empty(client, mock_redis):
 @pytest.mark.asyncio
 async def test_get_positions_returns_vessels(client, mock_redis):
     mock_redis._scan_keys = [b"pos:123", b"pos:456"]
-    mock_redis.hgetall = AsyncMock(
-        side_effect=[
-            _make_pos_data(123, 16.0, 108.2),
-            _make_pos_data(456, 17.0, 109.0),
-        ]
-    )
+    mock_redis._hgetall_results = [
+        _make_pos_data(123, 16.0, 108.2),
+        _make_pos_data(456, 17.0, 109.0),
+    ]
 
     response = await client.get("/api/v1/vessels/positions")
 
@@ -36,12 +34,10 @@ async def test_get_positions_returns_vessels(client, mock_redis):
 @pytest.mark.asyncio
 async def test_get_positions_bbox_filter(client, mock_redis):
     mock_redis._scan_keys = [b"pos:123", b"pos:456"]
-    mock_redis.hgetall = AsyncMock(
-        side_effect=[
-            _make_pos_data(123, 16.0, 108.2),
-            _make_pos_data(456, 50.0, 0.0),
-        ]
-    )
+    mock_redis._hgetall_results = [
+        _make_pos_data(123, 16.0, 108.2),
+        _make_pos_data(456, 50.0, 0.0),
+    ]
 
     response = await client.get("/api/v1/vessels/positions?bbox=100,10,120,20")
 
@@ -54,12 +50,10 @@ async def test_get_positions_bbox_filter(client, mock_redis):
 @pytest.mark.asyncio
 async def test_get_positions_min_sog_filter(client, mock_redis):
     mock_redis._scan_keys = [b"pos:123", b"pos:456"]
-    mock_redis.hgetall = AsyncMock(
-        side_effect=[
-            _make_pos_data(123, 16.0, 108.2),
-            {**_make_pos_data(456, 17.0, 109.0), "sog": "1.0"},
-        ]
-    )
+    mock_redis._hgetall_results = [
+        _make_pos_data(123, 16.0, 108.2),
+        {**_make_pos_data(456, 17.0, 109.0), "sog": "1.0"},
+    ]
 
     response = await client.get("/api/v1/vessels/positions?min_sog=5.0")
 

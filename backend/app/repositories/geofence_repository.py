@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 
 from geoalchemy2.elements import WKTElement
-from geoalchemy2.functions import ST_AsGeoJSON, ST_Contains, ST_Within
-from sqlalchemy import delete, select
+from geoalchemy2.functions import ST_AsGeoJSON, ST_Within
+from sqlalchemy import delete, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.geofence import Geofence
@@ -76,8 +76,12 @@ class GeofenceRepository:
         lon: float,
         lat: float,
     ) -> list[Geofence]:
-        point = WKTElement(f"POINT({lon} {lat})", srid=4326)
-        stmt = select(Geofence).where(ST_Contains(Geofence.geom, point))
+        stmt = select(Geofence).where(
+            text(
+                "ST_Contains(geofences.geom::geometry, "
+                "ST_SetSRID(ST_MakePoint(:lon, :lat), 4326))"
+            )
+        ).params(lon=lon, lat=lat)
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
 
