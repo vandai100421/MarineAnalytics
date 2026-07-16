@@ -7,56 +7,62 @@ interface AircraftInfoProps {
 
 export function AircraftInfo({ hex, positions }: AircraftInfoProps) {
   if (hex === null) {
-    return <p className="text-sm text-gray-400">Click an aircraft to see details</p>
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-center">
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-ocean-800/50">
+          <svg className="h-6 w-6 text-ocean-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        <p className="text-sm text-ocean-400">No aircraft selected</p>
+      </div>
+    )
   }
 
   const aircraft = positions?.find((a) => a.hex === hex)
 
   if (!aircraft) {
-    return <p className="text-sm text-gray-400">Aircraft {hex} not found</p>
+    return (
+      <div className="rounded-xl border border-ocean-700/50 bg-ocean-900/50 p-4 text-center">
+        <p className="text-sm text-ocean-400">Aircraft {hex} not found</p>
+      </div>
+    )
   }
 
   return (
     <div className="space-y-3">
-      <div>
-        <h2 className="text-lg font-bold text-purple-300">
-          {aircraft.flight ?? 'Unknown Flight'}
-        </h2>
-        <p className="text-sm text-gray-400">HEX: {aircraft.hex}</p>
+      <div className="rounded-xl border border-purple-500/30 bg-gradient-to-br from-purple-500/10 to-ocean-900/40 p-3">
+        <div className="flex items-center gap-2">
+          <svg className="h-5 w-5 text-purple-300" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
+          </svg>
+          <div>
+            <h2 className="text-base font-bold text-white">{aircraft.flight ?? 'Unknown Flight'}</h2>
+            <p className="font-mono text-[10px] text-ocean-400">HEX {aircraft.hex}</p>
+          </div>
+        </div>
       </div>
-      <div className="space-y-1 text-sm">
-        <InfoRow label="Registration" value={aircraft.reg ?? '—'} />
-        <InfoRow label="Type" value={aircraft.type ?? '—'} />
-        <InfoRow
-          label="Altitude"
-          value={aircraft.alt !== null ? `${aircraft.alt} ft` : '—'}
-        />
-        <InfoRow
-          label="Ground Speed"
-          value={aircraft.gs !== null ? `${aircraft.gs} kn` : '—'}
-        />
-        <InfoRow
-          label="Track"
-          value={aircraft.track !== null ? `${aircraft.track}°` : '—'}
-        />
-        <InfoRow
-          label="Position"
-          value={`${aircraft.lat.toFixed(4)}, ${aircraft.lon.toFixed(4)}`}
-        />
-        <InfoRow
-          label="Updated"
-          value={new Date(aircraft.ts).toLocaleString()}
-        />
+
+      <div className="grid grid-cols-2 gap-2">
+        <StatCard label="Altitude" value={aircraft.alt !== null ? `${aircraft.alt}` : '—'} unit="ft" />
+        <StatCard label="Ground Speed" value={aircraft.gs !== null ? `${aircraft.gs}` : '—'} unit="kn" />
+        <StatCard label="Track" value={aircraft.track !== null ? `${aircraft.track}` : '—'} unit="°" />
+        <StatCard label="Type" value={aircraft.type ?? '—'} />
+        <StatCard label="Registration" value={aircraft.reg ?? '—'} />
+        <StatCard label="Position" value={`${aircraft.lat.toFixed(2)}, ${aircraft.lon.toFixed(2)}`} />
       </div>
     </div>
   )
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value, unit }: { label: string; value: string; unit?: string }) {
   return (
-    <div className="flex justify-between">
-      <span className="text-gray-400">{label}</span>
-      <span className="text-gray-200">{value}</span>
+    <div className="rounded-lg border border-ocean-700/40 bg-ocean-900/40 p-2.5">
+      <p className="text-[10px] font-medium uppercase tracking-wider text-ocean-400">{label}</p>
+      <div className="flex items-baseline gap-0.5">
+        <p className="truncate text-sm font-medium text-ocean-100" title={value}>{value}</p>
+        {unit && <span className="text-[10px] text-ocean-500">{unit}</span>}
+      </div>
     </div>
   )
 }

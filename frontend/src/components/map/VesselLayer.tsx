@@ -1,13 +1,17 @@
-import { IconLayer } from 'deck.gl'
+import { IconLayer, LineLayer } from 'deck.gl'
 import type { VesselPosition, VesselFilters } from '../../types'
 
-const VESSEL_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
-  <path d="M32 4 L48 48 L32 40 L16 48 Z" fill="#0ea5e9" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
-</svg>`
+const VESSEL_SVG = (color: string) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+    <defs>
+      <filter id="s" x="-50%" y="-50%" width="200%" height="200%">
+        <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.5"/>
+      </filter>
+    </defs>
+    <path d="M32 6 L46 50 L32 42 L18 50 Z" fill="${color}" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round" filter="url(#s)"/>
+  </svg>`
 
-const VESSEL_ICON_URL = `data:image/svg+xml;base64,${btoa(VESSEL_ICON_SVG)}`
-
-const DEFAULT_COLOR: [number, number, number] = [14, 165, 233]
+const VESSEL_ICON_URL = `data:image/svg+xml;base64,${btoa(VESSEL_SVG('#0ea5e9'))}`
 
 interface VesselLayerProps {
   data: VesselPosition[]
@@ -27,21 +31,40 @@ export function createVesselLayer({ data, filters, onSelect, selectedMmsi }: Ves
     vessel: { x: 0, y: 0, width: 64, height: 64, anchorY: 32, mask: false },
   }
 
-  return new IconLayer({
+  const headingLayer = new LineLayer({
+    id: 'vessel-heading-layer',
+    data: filtered.filter((v) => v.sog > 0.5),
+    getSourcePosition: (d: VesselPosition) => [d.lon, d.lat],
+    getTargetPosition: (d: VesselPosition) => {
+      const headingRad = ((d.heading || d.cog || 0) * Math.PI) / 180
+      const sogFactor = Math.min(d.sog * 0.003, 0.05)
+      return [d.lon + Math.sin(headingRad) * sogFactor, d.lat + Math.cos(headingRad) * sogFactor]
+    },
+    getColor: (d: VesselPosition) => {
+      if (d.mmsi === selectedMmsi) return [251, 191, 36, 200]
+      return [56, 189, 248, 120]
+    },
+    getWidth: 2,
+    widthMinPixels: 1,
+    widthMaxPixels: 3,
+    pickable: false,
+  })
+
+  const vesselLayer = new IconLayer({
     id: 'vessel-layer',
     data: filtered,
     iconAtlas: VESSEL_ICON_URL,
     iconMapping,
     getIcon: () => 'vessel',
     getPosition: (d: VesselPosition) => [d.lon, d.lat],
-    getSize: (d: VesselPosition) => (d.mmsi === selectedMmsi ? 1.5 : 1),
+    getSize: (d: VesselPosition) => (d.mmsi === selectedMmsi ? 1.4 : 0.9),
     sizeScale: 24,
-    sizeMinPixels: 20,
-    sizeMaxPixels: 50,
+    sizeMinPixels: 18,
+    sizeMaxPixels: 48,
     getAngle: (d: VesselPosition) => -(d.heading || d.cog || 0),
     getColor: (d: VesselPosition) => {
       if (d.mmsi === selectedMmsi) return [251, 191, 36]
-      return DEFAULT_COLOR
+      return [255, 255, 255]
     },
     pickable: true,
     onClick: (info: { object?: VesselPosition }) => {
@@ -50,4 +73,6 @@ export function createVesselLayer({ data, filters, onSelect, selectedMmsi }: Ves
       }
     },
   })
+
+  return [headingLayer, vesselLayer]
 }

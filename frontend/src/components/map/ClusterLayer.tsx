@@ -17,7 +17,7 @@ interface ClusterPoint {
 
 export function createClusterLayer({ data, zoom }: ClusterLayerProps) {
   const index = new Supercluster({
-    radius: 60,
+    radius: 50,
     maxZoom: 14,
   })
 
@@ -43,13 +43,21 @@ export function createClusterLayer({ data, zoom }: ClusterLayerProps) {
     id: 'cluster-layer',
     data: clusterData.filter((d) => d.isCluster),
     getPosition: (d: { position: [number, number] }) => d.position,
-    getRadius: (d: { count: number }) => 500 + d.count * 20,
-    radiusMinPixels: 20,
-    radiusMaxPixels: 60,
-    getFillColor: [3, 105, 161, 180],
+    getRadius: (d: { count: number }) => Math.min(300 + d.count * 15, 2000),
+    radiusMinPixels: 18,
+    radiusMaxPixels: 50,
+    getFillColor: (d: { count: number }) => {
+      const intensity = Math.min(d.count / 50, 1)
+      return [
+        Math.round(14 + intensity * 60),
+        Math.round(165 - intensity * 100),
+        Math.round(233 - intensity * 100),
+        180,
+      ]
+    },
     stroked: true,
-    getLineColor: [255, 255, 255],
-    lineWidthMinPixels: 2,
+    getLineColor: [255, 255, 255, 150],
+    lineWidthMinPixels: 1.5,
     pickable: true,
   })
 
@@ -58,10 +66,12 @@ export function createClusterLayer({ data, zoom }: ClusterLayerProps) {
     data: clusterData.filter((d) => d.isCluster),
     getPosition: (d: { position: [number, number] }) => d.position,
     getText: (d: { count: number }) => String(d.count),
-    getSize: 14,
+    getSize: 13,
     getColor: [255, 255, 255],
     getTextAnchor: 'middle',
     getAlignmentBaseline: 'center',
+    fontWeight: 700,
+    fontFamily: 'Inter, sans-serif',
   })
 
   return [clusterLayer, textLayer] as const

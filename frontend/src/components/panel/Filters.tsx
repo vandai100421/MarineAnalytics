@@ -6,6 +6,15 @@ interface FiltersProps {
   onChange: (filters: VesselFilters) => void
 }
 
+const TYPE_COLORS: Record<number, string> = {
+  30: 'bg-orange-500/20 text-orange-300 border-orange-500/30',
+  70: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+  80: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+  60: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
+  36: 'bg-green-500/20 text-green-300 border-green-500/30',
+  37: 'bg-teal-500/20 text-teal-300 border-teal-500/30',
+}
+
 export function Filters({ filters, onChange }: FiltersProps) {
   const toggleShipType = (value: number) => {
     const current = filters.shipTypes ?? []
@@ -15,12 +24,20 @@ export function Filters({ filters, onChange }: FiltersProps) {
     onChange({ ...filters, shipTypes: next.length > 0 ? next : undefined })
   }
 
+  const activeCount = (filters.shipTypes?.length ?? 0) + (filters.minSog ? 1 : 0)
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Speed filter */}
       <div>
-        <label className="mb-1 block text-xs font-medium text-gray-400">
-          Min Speed (knots): {filters.minSog ?? 0}
-        </label>
+        <div className="mb-2 flex items-center justify-between">
+          <label className="text-xs font-semibold uppercase tracking-wider text-ocean-400">
+            Min Speed
+          </label>
+          <span className="rounded-md bg-sea-500/20 px-2 py-0.5 text-xs font-mono font-semibold text-sea-300">
+            {filters.minSog ?? 0} kn
+          </span>
+        </div>
         <input
           type="range"
           min={0}
@@ -33,25 +50,32 @@ export function Filters({ filters, onChange }: FiltersProps) {
               minSog: Number(e.target.value) > 0 ? Number(e.target.value) : undefined,
             })
           }
-          className="w-full accent-sea-500"
+          className="w-full"
         />
+        <div className="mt-1 flex justify-between text-[10px] text-ocean-500">
+          <span>0</span>
+          <span>15</span>
+          <span>30</span>
+        </div>
       </div>
 
+      {/* Ship type filter */}
       <div>
-        <label className="mb-2 block text-xs font-medium text-gray-400">
+        <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-ocean-400">
           Ship Type
         </label>
-        <div className="grid grid-cols-2 gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {SHIP_TYPE_OPTIONS.map((opt) => {
             const active = filters.shipTypes?.includes(opt.value) ?? false
+            const colorClass = TYPE_COLORS[opt.value] ?? 'bg-ocean-700/40 text-ocean-300 border-ocean-600/40'
             return (
               <button
                 key={opt.value}
                 onClick={() => toggleShipType(opt.value)}
-                className={`rounded px-2 py-1 text-xs transition-colors ${
+                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all ${
                   active
-                    ? 'bg-sea-500 text-white'
-                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                    ? `${colorClass} shadow-sm`
+                    : 'border-ocean-700/40 bg-ocean-900/40 text-ocean-400 hover:border-ocean-600 hover:text-ocean-200'
                 }`}
               >
                 {opt.label}
@@ -61,12 +85,16 @@ export function Filters({ filters, onChange }: FiltersProps) {
         </div>
       </div>
 
-      {(filters.shipTypes || filters.minSog) && (
+      {/* Clear button */}
+      {activeCount > 0 && (
         <button
           onClick={() => onChange({})}
-          className="w-full rounded bg-gray-700 px-3 py-1.5 text-xs text-gray-300 hover:bg-gray-600"
+          className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-300 transition-all hover:bg-red-500/20"
         >
-          Clear Filters
+          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" />
+          </svg>
+          Clear {activeCount} filter{activeCount > 1 ? 's' : ''}
         </button>
       )}
     </div>
