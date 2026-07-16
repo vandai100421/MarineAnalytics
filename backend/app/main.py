@@ -8,11 +8,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.aircraft import router as aircraft_router
 from app.api.alerts import router as alerts_router
 from app.api.geofences import router as geofences_router
+from app.api.monitoring import router as monitoring_router
 from app.api.stats import router as stats_router
 from app.api.vessels import router as vessels_router
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import get_logger, setup_logging
+from app.core.rate_limiter import RateLimitMiddleware
 from app.core.redis import close_redis, get_redis
 from app.realtime.broadcaster import subscriber_manager
 from app.realtime.sse import router as sse_router
@@ -77,6 +79,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(RateLimitMiddleware)
 
     app.include_router(vessels_router)
     app.include_router(aircraft_router)
@@ -84,6 +87,7 @@ def create_app() -> FastAPI:
     app.include_router(geofences_router)
     app.include_router(alerts_router)
     app.include_router(sse_router)
+    app.include_router(monitoring_router)
     register_error_handlers(app)
 
     @app.get("/health")

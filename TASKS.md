@@ -128,14 +128,14 @@ Owner chính: **BE1** + **FE1**.
 
 ## Phase 3 — Hardening (Sprint 7-8, ~1 tuần)
 
-- [ ] **T7.1** [DO] Compression policy `position_reports` (7 ngày) + retention (90 ngày)
-- [ ] **T7.2** [DO] Downsampling: continuous aggregate daily cho track dài hạn
-- [ ] **T7.3** [BE1] Index tuning: EXPLAIN ANALYZE các query hot, thêm index nếu thiếu
-- [ ] **T7.4** [BE2] Rate limit REST API + SSE max clients
+- [x] **T7.1** [DO] Compression policy `position_reports` (7 ngày) + retention (90 ngày)
+- [x] **T7.2** [DO] Downsampling: continuous aggregate daily cho track dài hạn
+- [x] **T7.3** [BE1] Index tuning: EXPLAIN ANALYZE các query hot, thêm index nếu thiếu
+- [x] **T7.4** [BE2] Rate limit REST API + SSE max clients
 - [ ] **T7.5** [DO] Backup DB (pg_basebackup) + restore test
-- [ ] **T7.6** [DO] Grafana alerts: WS down, DB disk > 70%, error rate > 1%
+- [x] **T7.6** [DO] Grafana alerts: WS down, DB disk > 70%, error rate > 1%
 - [ ] **T7.7** [TL] Load test: simulate 1000 SSE clients + 10k msg/s ingestion
-- [ ] **T7.8** [TL] Production deploy guide (README + deploy script)
+- [x] **T7.8** [TL] Production deploy guide (README + deploy script)
 - [ ] **T7.9** [TL] E2E smoke test full pipeline
 
 > **= Phase 3 DONE = Project complete**
@@ -146,10 +146,10 @@ Owner chính: **BE1** + **FE1**.
 
 Ghi các item technical debt phát sinh trong quá trình làm (không thuộc sprint nào).
 
-- [ ] TD-01: BatchWriter đã tạo nhưng chưa tích hợp vào aisstream_client (hiện write single message)
-- [ ] TD-02: VesselLayer chưa có icon rotation theo heading (đang dùng scatterplot tròn)
-- [ ] TD-03: Grafana + Prometheus dashboard chưa setup (T1.10 defer Phase 3)
-- [ ] TD-04: Frontend bundle > 500kB, cần code-split (deck.gl/recharts lazy load)
+- [x] TD-01: BatchWriter đã tạo nhưng chưa tích hợp vào aisstream_client (hiện write single message)
+- [x] TD-02: VesselLayer chưa có icon rotation theo heading (đang dùng scatterplot tròn)
+- [x] TD-03: Grafana + Prometheus dashboard chưa setup (T1.10 defer Phase 3)
+- [x] TD-04: Frontend bundle > 500kB, cần code-split (deck.gl/recharts lazy load)
 
 ---
 

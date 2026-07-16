@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     sse_heartbeat_seconds: float = Field(default=15.0, alias="SSE_HEARTBEAT_SECONDS")
     sse_max_clients: int = Field(default=200, alias="SSE_MAX_CLIENTS")
 
+    rate_limit_enabled: bool = Field(default=True, alias="RATE_LIMIT_ENABLED")
+    rate_limit_per_minute: int = Field(default=120, alias="RATE_LIMIT_PER_MINUTE")
+
     ingestion_flush_interval_seconds: float = Field(
         default=2.0, alias="INGESTION_FLUSH_INTERVAL_SECONDS"
     )

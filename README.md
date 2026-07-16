@@ -84,3 +84,61 @@ MarineAnalytics/
 ## Phát triển
 
 Xem [DEVELOPMENT_RULES.md](DEVELOPMENT_RULES.md) cho quy trình sprint, git workflow, và testing.
+
+## Production Deploy
+
+### Yêu cầu
+
+- Docker + Docker Compose
+- AISStream.io API key
+- (Optional) ADSBExchange API key cho máy bay
+- Server: 4GB RAM minimum, 50GB disk
+
+### Deploy bằng Docker Compose
+
+```bash
+# 1. Clone repo
+git clone <repo-url> && cd MarineAnalytics
+
+# 2. Cấu hình môi trường
+cp .env.example .env
+# Sửa các giá trị trong .env:
+#   AISSTREAM_API_KEY=<key>
+#   POSTGRES_PASSWORD=<strong-password>
+#   GRAFANA_PASSWORD=<strong-password>
+#   AISSTREAM_BBOX=104,0,122,25   # Biển Đông (min_lon,min_lat,max_lon,max_lat)
+
+# 3. Chạy full stack
+docker-compose --profile full up -d
+
+# 4. Chạy migrations
+docker-compose exec backend alembic upgrade head
+```
+
+### Services
+
+| Service | URL | Mô tả |
+|---------|-----|-------|
+| Frontend | http://localhost:5173 | Bản đồ + dashboard |
+| Backend API | http://localhost:8000 | REST + SSE |
+| API Docs | http://localhost:8000/docs | Swagger UI |
+| Grafana | http://localhost:3000 | Monitoring dashboard (admin / password từ .env) |
+| Prometheus | http://localhost:9090 | Metrics scraper |
+
+### Backup & Restore
+
+```bash
+# Backup database
+docker-compose exec timescaledb pg_dump -U marine marineanalytics | gzip > backup_$(date +%Y%m%d).sql.gz
+
+# Restore
+gunzip -c backup_YYYYMMDD.sql.gz | docker-compose exec -T timescaledb psql -U marine marineanalytics
+```
+
+### Scaling Notes
+
+- **SSE max clients**: chỉnh `SSE_MAX_CLIENTS` trong `.env` (default 200)
+- **Rate limit**: chỉnh `RATE_LIMIT_PER_MINUTE` (default 120)
+- **Batch ingestion**: chỉnh `INGESTION_BATCH_SIZE` + `INGESTION_FLUSH_INTERVAL_SECONDS`
+- **Retention**: data > 90 ngày tự xóa (TimescaleDB policy), compression sau 7 ngày
+- **Redis**: TTL 1h cho position cache, auto cleanup tàu không phát tín hiệu

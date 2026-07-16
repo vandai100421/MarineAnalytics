@@ -1,0 +1,22 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: timescaledb:5432
+    database: marineanalytics
+    user: marine
+    secureJsonData:
+      password: marine
+    jsonData:
+      sslmode: disable
+      postgresVersion: 1600
+      timescaledb: true

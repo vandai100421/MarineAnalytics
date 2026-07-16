@@ -1,16 +1,23 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { MapView } from './components/map/MapView'
 import { VesselInfo } from './components/panel/VesselInfo'
 import { AircraftInfo } from './components/panel/AircraftInfo'
 import { Filters } from './components/panel/Filters'
-import { TimelineScrubber } from './components/playback/TimelineScrubber'
 import { StatsCards } from './components/dashboard/StatsCards'
-import { Charts } from './components/dashboard/Charts'
-import { GeofenceEditor } from './components/geofence/GeofenceEditor'
-import { AlertPanel } from './components/geofence/AlertPanel'
 import { useMapStore } from './store/mapStore'
 import { useVesselTrack } from './api/vessels'
 import { useAircraftPositions } from './api/aircraft'
+
+const TimelineScrubber = lazy(() =>
+  import('./components/playback/TimelineScrubber').then((m) => ({ default: m.TimelineScrubber })),
+)
+const Charts = lazy(() => import('./components/dashboard/Charts').then((m) => ({ default: m.Charts })))
+const GeofenceEditor = lazy(() =>
+  import('./components/geofence/GeofenceEditor').then((m) => ({ default: m.GeofenceEditor })),
+)
+const AlertPanel = lazy(() =>
+  import('./components/geofence/AlertPanel').then((m) => ({ default: m.AlertPanel })),
+)
 
 type SidebarTab = 'map' | 'dashboard' | 'geofence'
 
@@ -33,10 +40,12 @@ export default function App() {
         <MapView />
         {selectedMmsi && trackData && trackData.points.length > 0 && (
           <div className="absolute bottom-4 left-1/2 z-10 w-96 -translate-x-1/2">
-            <TimelineScrubber
-              total={trackData.points.length}
-              onIndexChange={setPlaybackIndex}
-            />
+            <Suspense fallback={<div className="rounded bg-gray-800 p-4 text-center text-gray-400">Loading...</div>}>
+              <TimelineScrubber
+                total={trackData.points.length}
+                onIndexChange={setPlaybackIndex}
+              />
+            </Suspense>
           </div>
         )}
       </div>
@@ -94,7 +103,9 @@ export default function App() {
               <h2 className="mb-3 text-sm font-semibold uppercase text-gray-400">
                 Statistics
               </h2>
-              <Charts />
+              <Suspense fallback={<div className="text-center text-gray-400">Loading charts...</div>}>
+                <Charts />
+              </Suspense>
             </section>
           </div>
         )}
@@ -102,17 +113,21 @@ export default function App() {
         {tab === 'geofence' && (
           <div className="flex-1 overflow-y-auto p-4">
             <section className="mb-6">
-              <GeofenceEditor
-                isActive={geoEditorActive}
-                onToggle={() => setGeoEditorActive(!geoEditorActive)}
-                onCreated={() => setGeoRefreshKey((k) => k + 1)}
-              />
+              <Suspense fallback={<div className="text-center text-gray-400">Loading...</div>}>
+                <GeofenceEditor
+                  isActive={geoEditorActive}
+                  onToggle={() => setGeoEditorActive(!geoEditorActive)}
+                  onCreated={() => setGeoRefreshKey((k) => k + 1)}
+                />
+              </Suspense>
             </section>
             <section>
               <h2 className="mb-2 text-sm font-semibold uppercase text-gray-400">
                 Recent Alerts
               </h2>
-              <AlertPanel key={geoRefreshKey} />
+              <Suspense fallback={<div className="text-center text-gray-400">Loading...</div>}>
+                <AlertPanel key={geoRefreshKey} />
+              </Suspense>
             </section>
           </div>
         )}

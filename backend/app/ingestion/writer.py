@@ -177,6 +177,11 @@ class BatchWriter:
             for _ in buffer:
                 metrics.record_position_written()
             logger.debug("positions_batched", count=len(buffer))
+
+            from app.alerts.geofence_engine import check_position_against_geofences
+
+            for m in buffer:
+                await check_position_against_geofences(m)
         except Exception as exc:
             logger.error("position_batch_error", error=str(exc), count=len(buffer))
 

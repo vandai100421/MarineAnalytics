@@ -4,6 +4,7 @@ import asyncio
 import json
 from dataclasses import dataclass, field
 
+from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.core.redis import get_redis
 
@@ -124,7 +125,7 @@ class SubscriberManager:
                 logger.warning("sse_queue_full", dropping=len(filtered))
 
 
-subscriber_manager = SubscriberManager(max_clients=200)
+subscriber_manager = SubscriberManager(max_clients=get_settings().sse_max_clients)
 
 
 def _to_float(value: str | None) -> float | None:

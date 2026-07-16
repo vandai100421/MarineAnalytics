@@ -1,0 +1,64 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "title": "MarineAnalytics Overview",
+  "tags": ["marineanalytics"],
+  "timezone": "browser",
+  "panels": [
+    {
+      "title": "Active Vessels (Redis)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "marineanalytics_active_vessels", "legendFormat": "active" }]
+    },
+    {
+      "title": "Messages / sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "rate(marineanalytics_messages_total[1m])", "legendFormat": "msg/s" }]
+    },
+    {
+      "title": "Positions Written / sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "rate(marineanalytics_positions_written_total[1m])", "legendFormat": "pos/s" }]
+    },
+    {
+      "title": "Decode Errors / sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "rate(marineanalytics_decode_errors_total[1m])", "legendFormat": "errors/s" }]
+    },
+    {
+      "title": "SSE Subscribers",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 16 },
+      "datasource": "Prometheus",
+      "targets": [{ "expr": "marineanalytics_sse_subscribers", "legendFormat": "clients" }]
+    },
+    {
+      "title": "Position Reports Count (DB)",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 16 },
+      "datasource": "PostgreSQL",
+      "targets": [{ "rawSql": "SELECT count(*) FROM position_reports;", "format": "table" }]
+    },
+    {
+      "title": "DB Table Sizes",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 20 },
+      "datasource": "PostgreSQL",
+      "targets": [{
+        "rawSql": "SELECT relname AS table_name, pg_size_pretty(pg_total_relation_size(relid)) AS size FROM pg_catalog.pg_statio_user_tables ORDER BY pg_total_relation_size(relid) DESC LIMIT 10;",
+        "format": "table"
+      }]
+    }
+  ],
+  "schemaVersion": 39,
+  "version": 1,
+  "uid": "marineanalytics-overview"
+}
