@@ -11,7 +11,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    aisstream_api_key: str = Field(..., alias="AISSTREAM_API_KEY")
+    aisstream_api_key: str = Field(default="", alias="AISSTREAM_API_KEY")
     aisstream_bbox: str = Field(default="", alias="AISSTREAM_BBOX")
 
     database_url: str = Field(

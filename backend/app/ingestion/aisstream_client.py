@@ -24,6 +24,11 @@ def _build_subscribe_payload() -> dict[str, object]:
 
 
 async def connect_aisstream() -> None:
+    settings = get_settings()
+    if not settings.aisstream_api_key:
+        logger.warning("aisstream_disabled_no_api_key")
+        return
+
     backoff = INITIAL_BACKOFF
     await metrics.start_periodic_log(interval=60.0)
     while True:

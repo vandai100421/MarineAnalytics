@@ -52,8 +52,15 @@ def upgrade() -> None:
         sa.Column("source", sa.Text, server_default="aisstream"),
     )
     op.create_index("idx_pos_mmsi_ts", "position_reports", ["mmsi", "ts"])
+    op.create_index("idx_pos_ts_lat_lon", "position_reports", ["ts", "lat", "lon"])
 
-    op.execute("SELECT create_hypertable('position_reports', 'ts', if_not_exists => TRUE)")
+    op.execute(
+        "DO $$ BEGIN "
+        "IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN "
+        "PERFORM create_hypertable('position_reports', 'ts', if_not_exists => TRUE); "
+        "END IF; "
+        "END $$"
+    )
 
     op.create_table(
         "geofences",

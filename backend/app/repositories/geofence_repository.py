@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
+
 from geoalchemy2.elements import WKTElement
-from geoalchemy2.functions import ST_Contains, ST_Within
+from geoalchemy2.functions import ST_AsGeoJSON, ST_Contains, ST_Within
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,22 +15,17 @@ def _coords_to_wkt(coordinates: list[list[float]]) -> WKTElement:
     return WKTElement(f"POLYGON(({points}))", srid=4326)
 
 
-def _wkt_to_coords(geom: object) -> list[list[float]]:
-    text = str(geom)
-    if "POLYGON" not in text:
+def _geojson_to_coords(geojson_str: str | None) -> list[list[float]]:
+    if not geojson_str:
         return []
-    import re
-
-    match = re.search(r"\(\((.+)\)\)", text)
-    if not match:
-        return []
-    raw = match.group(1)
-    coords: list[list[float]] = []
-    for pair in raw.split(","):
-        parts = pair.strip().split()
-        if len(parts) >= 2:
-            coords.append([float(parts[0]), float(parts[1])])
-    return coords
+    try:
+        geojson = json.loads(geojson_str)
+        rings = geojson.get("coordinates", [])
+        if rings and len(rings) > 0:
+            return [[pt[0], pt[1]] for pt in rings[0]]
+    except (json.JSONDecodeError, IndexError, TypeError):
+        pass
+    return []
 
 
 class GeofenceRepository:
@@ -54,15 +51,18 @@ class GeofenceRepository:
         await self._session.refresh(geofence)
         return geofence
 
-    async def get_all(self) -> list[Geofence]:
-        stmt = select(Geofence).order_by(Geofence.created_at.desc())
+    async def get_all(self) -> list[tuple[Geofence, str | None]]:
+        stmt = select(Geofence, ST_AsGeoJSON(Geofence.geom)).order_by(Geofence.created_at.desc())
         result = await self._session.execute(stmt)
-        return list(result.scalars().all())
+        return [(row[0], row[1]) for row in result.all()]
 
-    async def get_by_id(self, geofence_id: int) -> Geofence | None:
-        stmt = select(Geofence).where(Geofence.id == geofence_id)
+    async def get_by_id(self, geofence_id: int) -> tuple[Geofence, str | None] | None:
+        stmt = select(Geofence, ST_AsGeoJSON(Geofence.geom)).where(Geofence.id == geofence_id)
         result = await self._session.execute(stmt)
-        return result.scalar_one_or_none()
+        row = result.first()
+        if row is None:
+            return None
+        return (row[0], row[1])
 
     async def delete(self, geofence_id: int) -> bool:
         stmt = delete(Geofence).where(Geofence.id == geofence_id)
@@ -87,10 +87,11 @@ class GeofenceRepository:
         lon: float,
         lat: float,
     ) -> bool:
-        geofence = await self.get_by_id(geofence_id)
-        if geofence is None:
+        result = await self.get_by_id(geofence_id)
+        if result is None:
             return False
+        geofence, _ = result
         point = WKTElement(f"POINT({lon} {lat})", srid=4326)
         stmt = select(ST_Within(point, geofence.geom))
-        result = await self._session.execute(stmt)
-        return bool(result.scalar())
+        result_stmt = await self._session.execute(stmt)
+        return bool(result_stmt.scalar())

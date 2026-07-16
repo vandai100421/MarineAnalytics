@@ -12,7 +12,7 @@ logger = get_logger("sse")
 REDIS_POS_KEY_PREFIX = "pos:"
 
 
-@dataclass
+@dataclass(eq=False)
 class Subscriber:
     queue: asyncio.Queue[str] = field(default_factory=lambda: asyncio.Queue(maxsize=500))
     bbox: tuple[float, float, float, float] | None = None

@@ -33,7 +33,13 @@ def upgrade() -> None:
         sa.Column("type", sa.Text),
     )
     op.create_index("idx_aircraft_hex_ts", "aircraft_positions", ["hex", "ts"])
-    op.execute("SELECT create_hypertable('aircraft_positions', 'ts', if_not_exists => TRUE)")
+    op.execute(
+        "DO $$ BEGIN "
+        "IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN "
+        "PERFORM create_hypertable('aircraft_positions', 'ts', if_not_exists => TRUE); "
+        "END IF; "
+        "END $$"
+    )
 
 
 def downgrade() -> None:

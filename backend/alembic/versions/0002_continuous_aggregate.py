@@ -19,26 +19,18 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     op.execute(
-        """
-        CREATE MATERIALIZED VIEW IF NOT EXISTS vessel_counts_hourly
-        WITH (timescaledb.continuous) AS
-        SELECT
-            time_bucket('1 hour', ts) AS bucket,
-            mmsi,
-            count(*) AS report_count,
-            avg(sog) AS avg_sog,
-            max(sog) AS max_sog
-        FROM position_reports
-        GROUP BY bucket, mmsi
-        WITH NO DATA
-        """
-    )
-    op.execute(
-        "SELECT add_continuous_aggregate_policy("
-        "'vessel_counts_hourly', "
-        "start_offset => INTERVAL '2 hours', "
-        "end_offset => INTERVAL '5 minutes', "
-        "schedule_interval => INTERVAL '1 hour')"
+        "DO $$ BEGIN "
+        "IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN "
+        "CREATE MATERIALIZED VIEW IF NOT EXISTS vessel_counts_hourly "
+        "WITH (timescaledb.continuous) AS "
+        "SELECT time_bucket('1 hour', ts) AS bucket, mmsi, "
+        "count(*) AS report_count, avg(sog) AS avg_sog, max(sog) AS max_sog "
+        "FROM position_reports GROUP BY bucket, mmsi WITH NO DATA; "
+        "PERFORM add_continuous_aggregate_policy('vessel_counts_hourly', "
+        "start_offset => INTERVAL '2 hours', end_offset => INTERVAL '5 minutes', "
+        "schedule_interval => INTERVAL '1 hour'); "
+        "END IF; "
+        "END $$"
     )
 
 
