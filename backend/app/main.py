@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.aircraft import router as aircraft_router
 from app.api.alerts import router as alerts_router
 from app.api.geofences import router as geofences_router
 from app.api.stats import router as stats_router
@@ -32,10 +33,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await redis.ping()
     logger.info("redis_connected", url=settings.redis_url)
 
+    from app.ingestion.adsbexchange_client import poll_adsbexchange
     from app.ingestion.aisstream_client import connect_aisstream
 
     ingestion_task = asyncio.create_task(connect_aisstream())
     logger.info("ingestion_task_started")
+
+    adsb_task = asyncio.create_task(poll_adsbexchange())
+    logger.info("adsb_task_started")
 
     await subscriber_manager.start_broadcaster(interval=settings.sse_batch_interval_seconds)
     logger.info("sse_broadcaster_started")
@@ -44,11 +49,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     await subscriber_manager.stop_broadcaster()
     ingestion_task.cancel()
-    try:
-        await ingestion_task
-    except (asyncio.CancelledError, Exception) as exc:
-        if not isinstance(exc, asyncio.CancelledError):
-            logger.warning("ingestion_task_stopped_with_error", error=str(exc))
+    adsb_task.cancel()
+    for task in (ingestion_task, adsb_task):
+        try:
+            await task
+        except (asyncio.CancelledError, Exception) as exc:
+            if not isinstance(exc, asyncio.CancelledError):
+                logger.warning("task_stopped_with_error", error=str(exc))
     await close_redis()
     logger.info("backend_stopped")
 
@@ -72,6 +79,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(vessels_router)
+    app.include_router(aircraft_router)
     app.include_router(stats_router)
     app.include_router(geofences_router)
     app.include_router(alerts_router)

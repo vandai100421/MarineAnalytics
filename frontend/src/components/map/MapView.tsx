@@ -5,12 +5,13 @@ import type { Layer } from '@deck.gl/core'
 import { PathLayer } from '@deck.gl/layers'
 import { useViewport } from '../../hooks/useViewport'
 import { useMapStore } from '../../store/mapStore'
-import { useVesselPositions } from '../../api/vessels'
-import { useVesselTrack } from '../../api/vessels'
+import { useVesselPositions, useVesselTrack } from '../../api/vessels'
+import { useAircraftPositions } from '../../api/aircraft'
 import { useSSE } from '../../hooks/useSSE'
 import { VesselLayer } from './VesselLayer'
 import { ClusterLayer } from './ClusterLayer'
 import { HeatmapLayer } from './HeatmapLayer'
+import { AircraftLayer } from './AircraftLayer'
 import type { VesselPosition } from '../../types'
 
 const MAP_STYLE_URL = import.meta.env.VITE_MAP_STYLE_URL ?? '/styles/osm-style.json'
@@ -31,6 +32,8 @@ export function MapView() {
   const filters = useMapStore((state) => state.filters)
   const selectedMmsi = useMapStore((state) => state.selectedMmsi)
   const setSelectedMmsi = useMapStore((state) => state.setSelectedMmsi)
+  const selectedHex = useMapStore((state) => state.selectedHex)
+  const setSelectedHex = useMapStore((state) => state.setSelectedHex)
   const realtimePositions = useMapStore((state) => state.realtimePositions)
   const updatePositions = useMapStore((state) => state.updatePositions)
   const mapMode = useMapStore((state) => state.mapMode)
@@ -38,6 +41,7 @@ export function MapView() {
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE)
 
   const { data: restPositions } = useVesselPositions(bbox, filters.minSog)
+  const { data: aircraftData } = useAircraftPositions(bbox)
 
   const bboxStr = useMemo(() => {
     if (!bbox) return null
@@ -94,25 +98,40 @@ export function MapView() {
       }
     }
 
-    if (viewState.zoom < CLUSTER_ZOOM_THRESHOLD && allPositions.length > 0) {
-      const [, clusterText] = ClusterLayer({
-        data: allPositions,
-        zoom: viewState.zoom,
-        bbox: bbox ?? { minLon: -180, minLat: -85, maxLon: 180, maxLat: 85 },
-        onSelect: setSelectedMmsi,
-      })
-      result.push(clusterText)
-      return result
+    const showVessels = mapMode === 'vessels' || mapMode === 'both'
+    const showAircraft = mapMode === 'aircraft' || mapMode === 'both'
+
+    if (showVessels) {
+      if (viewState.zoom < CLUSTER_ZOOM_THRESHOLD && allPositions.length > 0) {
+        const [, clusterText] = ClusterLayer({
+          data: allPositions,
+          zoom: viewState.zoom,
+          bbox: bbox ?? { minLon: -180, minLat: -85, maxLon: 180, maxLat: 85 },
+          onSelect: setSelectedMmsi,
+        })
+        result.push(clusterText)
+      } else {
+        result.push(
+          VesselLayer({
+            data: allPositions,
+            filters,
+            onSelect: setSelectedMmsi,
+            selectedMmsi,
+          }),
+        )
+      }
     }
 
-    result.push(
-      VesselLayer({
-        data: allPositions,
-        filters,
-        onSelect: setSelectedMmsi,
-        selectedMmsi,
-      }),
-    )
+    if (showAircraft && aircraftData) {
+      result.push(
+        AircraftLayer({
+          data: aircraftData,
+          onSelect: setSelectedHex,
+          selectedHex,
+        }),
+      )
+    }
+
     return result
   }, [
     allPositions,
@@ -125,6 +144,9 @@ export function MapView() {
     bbox,
     trackData,
     playbackIndex,
+    aircraftData,
+    selectedHex,
+    setSelectedHex,
   ])
 
   return (
@@ -147,26 +169,19 @@ export function MapView() {
       </MapGL>
 
       <div className="absolute bottom-4 left-4 z-10 flex gap-2">
-        <button
-          onClick={() => useMapStore.getState().setMapMode('vessels')}
-          className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-            mapMode === 'vessels'
-              ? 'bg-sea-500 text-white'
-              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-          }`}
-        >
-          Vessels
-        </button>
-        <button
-          onClick={() => useMapStore.getState().setMapMode('heatmap')}
-          className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-            mapMode === 'heatmap'
-              ? 'bg-sea-500 text-white'
-              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-          }`}
-        >
-          Heatmap
-        </button>
+        {(['vessels', 'aircraft', 'both', 'heatmap'] as const).map((mode) => (
+          <button
+            key={mode}
+            onClick={() => useMapStore.getState().setMapMode(mode)}
+            className={`rounded-lg px-3 py-1.5 text-sm font-medium capitalize ${
+              mapMode === mode
+                ? 'bg-sea-500 text-white'
+                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+            }`}
+          >
+            {mode}
+          </button>
+        ))}
       </div>
     </div>
   )

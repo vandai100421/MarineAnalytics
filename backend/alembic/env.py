@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 from app.core.config import get_settings
 from app.core.db import Base
+from app.models.aircraft import AircraftPosition  # noqa: F401
 from app.models.alert import Alert  # noqa: F401
 from app.models.geofence import Geofence  # noqa: F401
 from app.models.position import PositionReport  # noqa: F401

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { MapView } from './components/map/MapView'
 import { VesselInfo } from './components/panel/VesselInfo'
+import { AircraftInfo } from './components/panel/AircraftInfo'
 import { Filters } from './components/panel/Filters'
 import { TimelineScrubber } from './components/playback/TimelineScrubber'
 import { StatsCards } from './components/dashboard/StatsCards'
@@ -9,18 +10,22 @@ import { GeofenceEditor } from './components/geofence/GeofenceEditor'
 import { AlertPanel } from './components/geofence/AlertPanel'
 import { useMapStore } from './store/mapStore'
 import { useVesselTrack } from './api/vessels'
+import { useAircraftPositions } from './api/aircraft'
 
 type SidebarTab = 'map' | 'dashboard' | 'geofence'
 
 export default function App() {
   const selectedMmsi = useMapStore((state) => state.selectedMmsi)
+  const selectedHex = useMapStore((state) => state.selectedHex)
   const filters = useMapStore((state) => state.filters)
   const setFilters = useMapStore((state) => state.setFilters)
   const setPlaybackIndex = useMapStore((state) => state.setPlaybackIndex)
+  const bbox = useMapStore((state) => state.bbox)
   const [tab, setTab] = useState<SidebarTab>('map')
   const [geoEditorActive, setGeoEditorActive] = useState(false)
   const [geoRefreshKey, setGeoRefreshKey] = useState(0)
   const { data: trackData } = useVesselTrack(selectedMmsi)
+  const { data: aircraftData } = useAircraftPositions(bbox)
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-gray-900">
@@ -59,6 +64,14 @@ export default function App() {
                 Vessel Info
               </h2>
               <VesselInfo mmsi={selectedMmsi} />
+              {selectedHex && (
+                <div className="mt-4 border-t border-gray-700 pt-4">
+                  <h2 className="mb-2 text-sm font-semibold uppercase text-gray-400">
+                    Aircraft Info
+                  </h2>
+                  <AircraftInfo hex={selectedHex} positions={aircraftData} />
+                </div>
+              )}
             </section>
             <section>
               <h2 className="mb-2 text-sm font-semibold uppercase text-gray-400">

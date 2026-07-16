@@ -5,16 +5,18 @@ interface MapState {
   bbox: BoundingBox | null
   filters: VesselFilters
   selectedMmsi: number | null
+  selectedHex: string | null
   realtimePositions: Map<number, VesselPosition>
   view: 'map' | 'dashboard'
-  mapMode: 'vessels' | 'heatmap'
+  mapMode: 'vessels' | 'heatmap' | 'aircraft' | 'both'
   playbackIndex: number
   setBbox: (bbox: BoundingBox | null) => void
   setFilters: (filters: VesselFilters) => void
   setSelectedMmsi: (mmsi: number | null) => void
+  setSelectedHex: (hex: string | null) => void
   updatePositions: (positions: VesselPosition[]) => void
   setView: (view: 'map' | 'dashboard') => void
-  setMapMode: (mode: 'vessels' | 'heatmap') => void
+  setMapMode: (mode: 'vessels' | 'heatmap' | 'aircraft' | 'both') => void
   setPlaybackIndex: (index: number) => void
 }
 
@@ -22,6 +24,7 @@ export const useMapStore = create<MapState>((set) => ({
   bbox: null,
   filters: {},
   selectedMmsi: null,
+  selectedHex: null,
   realtimePositions: new Map(),
   view: 'map',
   mapMode: 'vessels',
@@ -29,6 +32,7 @@ export const useMapStore = create<MapState>((set) => ({
   setBbox: (bbox) => set({ bbox }),
   setFilters: (filters) => set({ filters }),
   setSelectedMmsi: (mmsi: number | null) => set({ selectedMmsi: mmsi }),
+  setSelectedHex: (hex: string | null) => set({ selectedHex: hex }),
   updatePositions: (positions) =>
     set((state) => {
       const next = new Map(state.realtimePositions)

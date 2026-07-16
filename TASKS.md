@@ -114,13 +114,13 @@ Owner chính: **BE2** + **FE2**.
 
 Owner chính: **BE1** + **FE1**.
 
-- [ ] **T6.1** [BE1] Migration tạo `aircraft_positions` (hypertable)
-- [ ] **T6.2** [BE1] `ingestion/adsbexchange_client.py`: REST poll + parse
-- [ ] **T6.3** [BE1] `ingestion/writer.py`: upsert Redis `air:{hex}` + insert DB
-- [ ] [T6.4] [BE2] `api/aircraft.py`: `GET /aircraft/positions?bbox=...`
-- [ ] **T6.5** [FE1] Aircraft layer: icon máy bay + rotation theo track
-- [ ] **T6.6** [FE1] Toggle vessel/aircraft/both trên map
-- [ ] **T6.7** [FE2] Info panel máy bay (flight, hex, alt, gs, type)
+- [x] **T6.1** [BE1] Migration tạo `aircraft_positions` (hypertable)
+- [x] **T6.2** [BE1] `ingestion/adsbexchange_client.py`: REST poll + parse
+- [x] **T6.3** [BE1] `ingestion/writer.py`: upsert Redis `air:{hex}` + insert DB
+- [x] **T6.4** [BE2] `api/aircraft.py`: `GET /aircraft/positions?bbox=...`
+- [x] **T6.5** [FE1] Aircraft layer: icon máy bay + rotation theo track
+- [x] **T6.6** [FE1] Toggle vessel/aircraft/both trên map
+- [x] **T6.7** [FE2] Info panel máy bay (flight, hex, alt, gs, type)
 
 > **Demo Sprint 6**: Cả tàu + máy bay trên bản đồ + analytics. **= Phase 2 DONE**
 

@@ -54,6 +54,19 @@ export interface VesselFilters {
   maxSog?: number
 }
 
+export interface AircraftPosition {
+  hex: string
+  ts: string
+  lat: number
+  lon: number
+  alt: number | null
+  gs: number | null
+  track: number | null
+  flight: string | null
+  reg: string | null
+  type: string | null
+}
+
 export const SHIP_TYPE_OPTIONS = [
   { value: 30, label: 'Fishing' },
   { value: 31, label: 'Towing' },
