@@ -1,6 +1,16 @@
 from datetime import datetime
+from typing import Generic, TypeVar
 
 from pydantic import BaseModel
+
+T = TypeVar("T")
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    total: int
+    limit: int
+    offset: int
+    items: list[T]
 
 
 class VesselPositionResponse(BaseModel):
@@ -24,8 +34,7 @@ class PositionReportResponse(BaseModel):
     nav_status: int | None = None
 
 
-class PaginatedResponse(BaseModel):
+class TrackResponse(BaseModel):
+    mmsi: int
     total: int
-    limit: int
-    offset: int
-    items: list  # type: ignore[type-arg]
+    points: list[PositionReportResponse]
