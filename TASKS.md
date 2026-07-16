@@ -92,12 +92,12 @@ Owner chính: **BE2** (realtime) + **FE2** (dashboard).
 
 Owner chính: **FE2** + **BE2**.
 
-- [ ] **T4.1** [FE2] `components/playback/TimelineScrubber.tsx`: slider thời gian, play/pause/speed
-- [ ] **T4.2** [FE2] Playback vessel: query track API → animate path trên deck.gl (PathLayer)
-- [ ] **T4.3** [BE2] Optimize track query: chỉ SELECT cột cần, limit points (downsample nếu > 5000 points)
-- [ ] **T4.4** [FE1] `components/map/HeatmapLayer.tsx`: deck.gl HexagonLayer mật độ tàu
-- [ ] **T4.5** [BE2] `api/stats.py`: `GET /stats/heatmap?bbox=...&from=...&to=...` (aggregate grid)
-- [ ] **T4.6** [FE2] Toggle heatmap/scatter mode trên map
+- [x] **T4.1** [FE2] `components/playback/TimelineScrubber.tsx`: slider thời gian, play/pause/speed
+- [x] **T4.2** [FE2] Playback vessel: query track API → animate path trên deck.gl (PathLayer)
+- [x] **T4.3** [BE2] Optimize track query: chỉ SELECT cột cần, limit points (downsample nếu > 5000 points)
+- [x] **T4.4** [FE1] `components/map/HeatmapLayer.tsx`: deck.gl HexagonLayer mật độ tàu
+- [x] **T4.5** [BE2] `api/stats.py`: `GET /stats/heatmap?bbox=...&from=...&to=...` (aggregate grid)
+- [x] **T4.6** [FE2] Toggle heatmap/scatter mode trên map
 
 ### Sprint 5 — Geofence Alerts (tuần 6)
 

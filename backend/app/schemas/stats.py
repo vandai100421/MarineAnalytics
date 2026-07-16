@@ -15,3 +15,8 @@ class TypeCount(BaseModel):
 
 class ByTypeResponse(BaseModel):
     types: list[TypeCount]
+
+
+class HeatmapResponse(BaseModel):
+    points: list[list[float]]
+    total: int

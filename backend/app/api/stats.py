@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,7 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_session
 from app.core.redis import get_redis
 from app.models.vessel import Vessel
-from app.schemas.stats import ByTypeResponse, OverviewResponse, TypeCount
+from app.repositories.position_repository import PositionRepository
+from app.schemas.stats import ByTypeResponse, HeatmapResponse, OverviewResponse, TypeCount
 
 router = APIRouter(prefix="/api/v1/stats", tags=["stats"])
 
@@ -69,18 +72,25 @@ async def get_by_type(
     )
 
 
-@router.get("/heatmap")
+@router.get("/heatmap", response_model=HeatmapResponse)
 async def get_heatmap(
     bbox: str | None = Query(None, description="min_lon,min_lat,max_lon,max_lat"),
+    time_from: datetime | None = Query(None, alias="from"),
+    time_to: datetime | None = Query(None, alias="to"),
     session: AsyncSession = Depends(get_session),
-) -> dict[str, object]:
-    from app.models.position import PositionReport
+) -> HeatmapResponse:
+    repo = PositionRepository(session)
+    parsed_bbox: tuple[float, float, float, float] | None = None
+    if bbox:
+        try:
+            parts = [float(x) for x in bbox.split(",")]
+            if len(parts) == 4:
+                parsed_bbox = (parts[0], parts[1], parts[2], parts[3])
+        except ValueError:
+            pass
 
-    stmt = select(PositionReport.lat, PositionReport.lon).limit(10000)
-    result = await session.execute(stmt)
-    rows = result.all()
-
-    return {
-        "points": [[row[1], row[0]] for row in rows],
-        "total": len(rows),
-    }
+    points = await repo.get_heatmap_points(time_from, time_to, parsed_bbox)
+    return HeatmapResponse(
+        points=[[lon, lat] for lat, lon in points],
+        total=len(points),
+    )

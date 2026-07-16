@@ -7,11 +7,15 @@ interface MapState {
   selectedMmsi: number | null
   realtimePositions: Map<number, VesselPosition>
   view: 'map' | 'dashboard'
+  mapMode: 'vessels' | 'heatmap'
+  playbackIndex: number
   setBbox: (bbox: BoundingBox | null) => void
   setFilters: (filters: VesselFilters) => void
   setSelectedMmsi: (mmsi: number | null) => void
   updatePositions: (positions: VesselPosition[]) => void
   setView: (view: 'map' | 'dashboard') => void
+  setMapMode: (mode: 'vessels' | 'heatmap') => void
+  setPlaybackIndex: (index: number) => void
 }
 
 export const useMapStore = create<MapState>((set) => ({
@@ -20,6 +24,8 @@ export const useMapStore = create<MapState>((set) => ({
   selectedMmsi: null,
   realtimePositions: new Map(),
   view: 'map',
+  mapMode: 'vessels',
+  playbackIndex: 0,
   setBbox: (bbox) => set({ bbox }),
   setFilters: (filters) => set({ filters }),
   setSelectedMmsi: (mmsi: number | null) => set({ selectedMmsi: mmsi }),
@@ -32,4 +38,6 @@ export const useMapStore = create<MapState>((set) => ({
       return { realtimePositions: next }
     }),
   setView: (view) => set({ view }),
+  setMapMode: (mapMode) => set({ mapMode }),
+  setPlaybackIndex: (playbackIndex) => set({ playbackIndex }),
 }))
