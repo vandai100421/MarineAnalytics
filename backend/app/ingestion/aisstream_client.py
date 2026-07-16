@@ -16,9 +16,12 @@ INITIAL_BACKOFF = 1
 
 def _build_subscribe_payload() -> dict[str, object]:
     settings = get_settings()
+    bbox = settings.bbox_list
+    if not bbox:
+        bbox = [[-90, -180], [90, 180]]
     payload: dict[str, object] = {
-        "APIKey": settings.aisstream_api_key,
-        "BoundingBoxes": [settings.bbox_list] if settings.bbox_list else None,
+        "Apikey": settings.aisstream_api_key,
+        "BoundingBoxes": [bbox],
     }
     return payload
 

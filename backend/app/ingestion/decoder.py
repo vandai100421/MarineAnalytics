@@ -10,6 +10,7 @@ DYNAMIC_MESSAGE_TYPES = {
     "PositionReport",
     "PositionReportInt",
     "StandardClassBPositionReport",
+    "ExtendedClassBPositionReport",
     "LongRangeAisBroadcast",
 }
 STATIC_MESSAGE_TYPES = {"ShipStaticData", "StaticDataReport"}
@@ -45,6 +46,11 @@ def decode_message(
     metadata: dict[str, object],
     payload: dict[str, object],
 ) -> DecodedMessage | None:
+    if message_type and message_type in payload:
+        inner = payload[message_type]
+        if isinstance(inner, dict):
+            payload = inner
+
     mmsi = _extract_mmsi(metadata, payload)
     if mmsi is None or mmsi <= 0:
         return None

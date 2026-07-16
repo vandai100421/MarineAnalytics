@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Float, Index, SmallInteger, Text
+from sqlalchemy import BigInteger, Float, Index, SmallInteger, Text, TIMESTAMP
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base
@@ -11,7 +11,7 @@ class PositionReport(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     mmsi: Mapped[int] = mapped_column(BigInteger, nullable=False, index=True)
-    ts: Mapped[datetime] = mapped_column(nullable=False, index=True)
+    ts: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False, index=True)
     lat: Mapped[float] = mapped_column(Float, nullable=False)
     lon: Mapped[float] = mapped_column(Float, nullable=False)
     sog: Mapped[float | None] = mapped_column(Float)

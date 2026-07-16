@@ -44,7 +44,7 @@ class Settings(BaseSettings):
         if len(parts) != 4:
             return None
         min_lon, min_lat, max_lon, max_lat = parts
-        return [[min_lon, min_lat], [max_lon, max_lat]]
+        return [[min_lat, min_lon], [max_lat, max_lon]]
 
 
 @lru_cache

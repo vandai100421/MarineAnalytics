@@ -60,3 +60,4 @@ logs/
 
 # ─── opencode ───
 .opencode/
+dump.rdb
