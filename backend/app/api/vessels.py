@@ -83,6 +83,87 @@ async def get_positions(
     return positions
 
 
+@router.get("/cluster", response_model=list[VesselPositionResponse])
+async def get_cluster_positions(
+    bbox: str | None = Query(None, description="min_lon,min_lat,max_lon,max_lat"),
+    precision: int = Query(
+        2, ge=1, le=6, description="Grid precision (1=10deg, 2=1deg, 3=0.1deg)"
+    ),
+    redis: Redis = Depends(get_redis),  # type: ignore[type-arg]
+) -> list[VesselPositionResponse]:
+    import math
+
+    parsed_bbox: tuple[float, float, float, float] | None = None
+    if bbox:
+        try:
+            parts = [float(x) for x in bbox.split(",")]
+            if len(parts) == 4:
+                parsed_bbox = (parts[0], parts[1], parts[2], parts[3])
+        except ValueError:
+            pass
+
+    keys: list[str] = []
+    async for key in redis.scan_iter(match="pos:*", count=2000):
+        keys.append(key)
+
+    if not keys:
+        return []
+
+    pipe = redis.pipeline()
+    for key in keys:
+        pipe.hgetall(key)
+    results = await pipe.execute()
+
+    grid_size = math.pow(10, 1 - precision)
+    grid: dict[tuple[float, float], dict[str, object]] = {}
+
+    for data in results:
+        if not data:
+            continue
+        lat = _to_float(data.get("lat"))
+        lon = _to_float(data.get("lon"))
+        if lat is None or lon is None:
+            continue
+        if parsed_bbox is not None:
+            min_lon, min_lat, max_lon, max_lat = parsed_bbox
+            if not (min_lon <= lon <= max_lon and min_lat <= lat <= max_lat):
+                continue
+
+        grid_lat = round(lat / grid_size) * grid_size
+        grid_lon = round(lon / grid_size) * grid_size
+        key_cell = (grid_lat, grid_lon)
+        if key_cell not in grid:
+            grid[key_cell] = {
+                "mmsi": 0,
+                "lat": grid_lat,
+                "lon": grid_lon,
+                "sog": 0.0,
+                "cog": 0.0,
+                "heading": 0.0,
+                "ts": "",
+                "count": 0,
+            }
+        cell = grid[key_cell]
+        current_count: int = cell["count"]  # type: ignore[assignment]
+        cell["count"] = current_count + 1
+
+    result: list[VesselPositionResponse] = []
+    for cell in grid.values():
+        count: int = cell.pop("count")  # type: ignore[assignment]
+        resp = VesselPositionResponse(
+            mmsi=count,
+            lat=cell["lat"],
+            lon=cell["lon"],
+            sog=0.0,
+            cog=0.0,
+            heading=0.0,
+            ts="",
+        )
+        result.append(resp)
+
+    return result
+
+
 @router.get("/{mmsi}", response_model=VesselResponse)
 async def get_vessel(
     mmsi: int,
@@ -97,6 +178,37 @@ async def get_vessel(
             detail=f"Vessel {mmsi} not found",
         )
     return VesselResponse.model_validate(vessel)
+
+
+@router.get("/{mmsi}/realtime", response_model=VesselPositionResponse)
+async def get_vessel_realtime(
+    mmsi: int,
+    redis: Redis = Depends(get_redis),  # type: ignore[type-arg]
+) -> VesselPositionResponse:
+    data = await redis.hgetall(f"pos:{mmsi}")
+    if not data:
+        raise ProblemDetail(
+            status_code=404,
+            title="Not Found",
+            detail=f"Vessel {mmsi} not in realtime cache",
+        )
+    lat = _to_float(data.get("lat"))
+    lon = _to_float(data.get("lon"))
+    if lat is None or lon is None:
+        raise ProblemDetail(
+            status_code=404,
+            title="Not Found",
+            detail=f"Vessel {mmsi} has no position",
+        )
+    return VesselPositionResponse(
+        mmsi=mmsi,
+        lat=lat,
+        lon=lon,
+        sog=_to_float(data.get("sog")) or 0.0,
+        cog=_to_float(data.get("cog")) or 0.0,
+        heading=_to_float(data.get("heading")) or 0.0,
+        ts=data.get("ts", ""),
+    )
 
 
 @router.get("/{mmsi}/track", response_model=TrackResponse)

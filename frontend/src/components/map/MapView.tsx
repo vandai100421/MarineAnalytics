@@ -1,14 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import MapGL from 'react-map-gl/maplibre'
 import { DeckGL } from 'deck.gl'
 import type { Layer } from '@deck.gl/core'
-import { PathLayer } from '@deck.gl/layers'
+import { PathLayer, TextLayer, ScatterplotLayer } from '@deck.gl/layers'
 import { useMapStore } from '../../store/mapStore'
-import { useVesselPositions, useVesselTrack } from '../../api/vessels'
+import { useVesselPositions, useVesselTrack, useVesselCluster } from '../../api/vessels'
 import { useAircraftPositions } from '../../api/aircraft'
 import { useSSE } from '../../hooks/useSSE'
 import { createVesselLayer } from './VesselLayer'
-import { createClusterLayer } from './ClusterLayer'
 import { createHeatmapLayer } from './HeatmapLayer'
 import { createAircraftLayer } from './AircraftLayer'
 import type { VesselPosition } from '../../types'
@@ -23,7 +22,7 @@ const INITIAL_VIEW_STATE = {
   bearing: 0,
 }
 
-const CLUSTER_ZOOM_THRESHOLD = 8
+const DETAIL_ZOOM_THRESHOLD = 8
 
 export function MapView() {
   const bbox = useMapStore((state) => state.bbox)
@@ -37,17 +36,45 @@ export function MapView() {
   const mapMode = useMapStore((state) => state.mapMode)
   const playbackIndex = useMapStore((state) => state.playbackIndex)
   const [zoom, setZoom] = useState(INITIAL_VIEW_STATE.zoom)
+  const [viewState, setViewState] = useState({
+    longitude: INITIAL_VIEW_STATE.longitude,
+    latitude: INITIAL_VIEW_STATE.latitude,
+    zoom: INITIAL_VIEW_STATE.zoom,
+  })
 
-  const { data: restPositions } = useVesselPositions(bbox, filters.minSog)
-  const { data: aircraftData } = useAircraftPositions(bbox)
-
-  const bboxStr = useMemo(() => {
-    if (!bbox) return null
-    return `${bbox.minLon},${bbox.minLat},${bbox.maxLon},${bbox.maxLat}`
+  // Debounce bbox changes (500ms) to avoid API spam on pan/zoom
+  const [debouncedBbox, setDebouncedBbox] = useState(bbox)
+  const bboxTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (bboxTimerRef.current) clearTimeout(bboxTimerRef.current)
+    bboxTimerRef.current = setTimeout(() => setDebouncedBbox(bbox), 500)
+    return () => {
+      if (bboxTimerRef.current) clearTimeout(bboxTimerRef.current)
+    }
   }, [bbox])
 
+  const isDetailZoom = zoom >= DETAIL_ZOOM_THRESHOLD
+
+  // Only fetch individual positions when zoomed in
+  const { data: restPositions } = useVesselPositions(
+    isDetailZoom ? debouncedBbox : null,
+    filters.minSog,
+  )
+  // Fetch cluster data when zoomed out
+  const { data: clusterData } = useVesselCluster(
+    !isDetailZoom ? debouncedBbox : null,
+    zoom,
+  )
+  const { data: aircraftData } = useAircraftPositions(debouncedBbox)
+
+  const bboxStr = useMemo(() => {
+    if (!debouncedBbox) return null
+    return `${debouncedBbox.minLon},${debouncedBbox.minLat},${debouncedBbox.maxLon},${debouncedBbox.maxLat}`
+  }, [debouncedBbox])
+
+  // Only use SSE when zoomed in
   useSSE({
-    bbox: bboxStr,
+    bbox: isDetailZoom ? bboxStr : null,
     minSog: filters.minSog,
     onPositions: updatePositions,
   })
@@ -55,6 +82,7 @@ export function MapView() {
   const { data: trackData } = useVesselTrack(selectedMmsi)
 
   const allPositions = useMemo(() => {
+    if (!isDetailZoom) return []
     const merged = new Map<number, VesselPosition>()
     for (const p of restPositions ?? []) {
       merged.set(p.mmsi, p)
@@ -63,7 +91,7 @@ export function MapView() {
       merged.set(p.mmsi, p)
     }
     return Array.from(merged.values())
-  }, [restPositions, realtimePositions])
+  }, [restPositions, realtimePositions, isDetailZoom])
 
   const heatmapData = useMemo(() => {
     return allPositions.map((p) => [p.lon, p.lat] as [number, number])
@@ -100,15 +128,58 @@ export function MapView() {
     const showAircraft = mapMode === 'aircraft' || mapMode === 'both'
 
     if (showVessels) {
-      if (zoom < CLUSTER_ZOOM_THRESHOLD && allPositions.length > 0) {
-        const [, clusterText] = createClusterLayer({
-          data: allPositions,
-          zoom,
-          bbox: bbox ?? { minLon: -180, minLat: -85, maxLon: 180, maxLat: 85 },
-          onSelect: setSelectedMmsi,
-        })
-        result.push(clusterText)
-      } else {
+      if (!isDetailZoom && clusterData && clusterData.length > 0) {
+        // Cluster mode: show count bubbles (MarineTraffic style)
+        result.push(
+          new ScatterplotLayer({
+            id: 'cluster-bubble',
+            data: clusterData,
+            getPosition: (d: VesselPosition) => [d.lon, d.lat],
+            getRadius: (d: VesselPosition) => Math.min(3000 + d.mmsi * 80, 30000),
+            radiusMinPixels: 12,
+            radiusMaxPixels: 40,
+            getFillColor: (d: VesselPosition) => {
+              const intensity = Math.min(d.mmsi / 100, 1)
+              return [
+                Math.round(14 + intensity * 40),
+                Math.round(165 - intensity * 80),
+                Math.round(233 - intensity * 80),
+                200,
+              ]
+            },
+            stroked: true,
+            getLineColor: [255, 255, 255, 120],
+            lineWidthMinPixels: 1.5,
+            pickable: true,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onClick: (info: any) => {
+              if (info.coordinate && info.coordinate.length >= 2) {
+                const [lon, lat] = info.coordinate
+                setViewState((prev) => ({
+                  ...prev,
+                  longitude: lon,
+                  latitude: lat,
+                  zoom: Math.min(prev.zoom + 2, DETAIL_ZOOM_THRESHOLD + 1),
+                }))
+              }
+            },
+          }),
+        )
+        result.push(
+          new TextLayer({
+            id: 'cluster-text',
+            data: clusterData,
+            getPosition: (d: VesselPosition) => [d.lon, d.lat],
+            getText: (d: VesselPosition) => String(d.mmsi),
+            getSize: 12,
+            getColor: [255, 255, 255],
+            getTextAnchor: 'middle',
+            getAlignmentBaseline: 'center',
+            fontWeight: 700,
+            fontFamily: 'Inter, sans-serif',
+          }),
+        )
+      } else if (isDetailZoom && allPositions.length > 0) {
         result.push(
           ...createVesselLayer({
             data: allPositions,
@@ -133,13 +204,13 @@ export function MapView() {
     return result
   }, [
     allPositions,
+    clusterData,
     heatmapData,
     mapMode,
-    zoom,
+    isDetailZoom,
     filters,
     selectedMmsi,
     setSelectedMmsi,
-    bbox,
     trackData,
     playbackIndex,
     aircraftData,
@@ -153,11 +224,13 @@ export function MapView() {
         initialViewState={INITIAL_VIEW_STATE}
         controller={true}
         layers={layers}
+        viewState={viewState}
         getCursor={() => 'crosshair'}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onViewStateChange={(evt: any) => {
           const { longitude, latitude, zoom: newZoom } = evt.viewState
           setZoom(newZoom)
+          setViewState({ longitude, latitude, zoom: newZoom })
           const span = 360 / Math.pow(2, newZoom)
           const halfSpan = span / 2
           useMapStore.getState().setBbox({
@@ -202,7 +275,7 @@ export function MapView() {
 
       {/* Zoom indicator - bottom right */}
       <div className="glass absolute bottom-6 right-6 z-10 rounded-lg px-3 py-1.5 text-xs font-mono text-ocean-300">
-        Zoom: {zoom.toFixed(1)}
+        Zoom: {zoom.toFixed(1)} {isDetailZoom ? '· Detail' : '· Cluster'}
       </div>
     </div>
   )

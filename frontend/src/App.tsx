@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useState, useEffect } from 'react'
 import { MapView } from './components/map/MapView'
 import { VesselInfo } from './components/panel/VesselInfo'
 import { AircraftInfo } from './components/panel/AircraftInfo'
@@ -43,6 +43,14 @@ export default function App() {
   const { data: trackData } = useVesselTrack(selectedMmsi)
   const { data: aircraftData } = useAircraftPositions(bbox)
   const { data: stats } = useStatsOverview()
+
+  // Auto-switch to vessel tab when a vessel is selected
+  useEffect(() => {
+    if (selectedMmsi !== null) {
+      setTab('vessel')
+      setSidebarOpen(true)
+    }
+  }, [selectedMmsi])
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-ocean-950">

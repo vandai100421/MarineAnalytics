@@ -15,8 +15,25 @@ export function useVesselPositions(bbox: BoundingBox | null, minSog?: number) {
   return useQuery<VesselPosition[]>({
     queryKey: ['vessel-positions', query],
     queryFn: () => apiFetch<VesselPosition[]>(`/api/v1/vessels/positions${query ? `?${query}` : ''}`),
-    refetchInterval: 10_000,
-    staleTime: 5_000,
+    refetchInterval: 15_000,
+    staleTime: 10_000,
+  })
+}
+
+export function useVesselCluster(bbox: BoundingBox | null, zoom: number) {
+  const precision = zoom < 4 ? 1 : zoom < 6 ? 2 : zoom < 8 ? 3 : 4
+  const params = new URLSearchParams()
+  if (bbox) {
+    params.set('bbox', `${bbox.minLon},${bbox.minLat},${bbox.maxLon},${bbox.maxLat}`)
+  }
+  params.set('precision', String(precision))
+  const query = params.toString()
+
+  return useQuery<VesselPosition[]>({
+    queryKey: ['vessel-cluster', query],
+    queryFn: () => apiFetch<VesselPosition[]>(`/api/v1/vessels/cluster?${query}`),
+    refetchInterval: 30_000,
+    staleTime: 15_000,
   })
 }
 
@@ -25,6 +42,17 @@ export function useVessel(mmsi: number | null) {
     queryKey: ['vessel', mmsi],
     queryFn: () => apiFetch<Vessel>(`/api/v1/vessels/${mmsi}`),
     enabled: mmsi !== null,
+    retry: false,
+  })
+}
+
+export function useVesselRealtime(mmsi: number | null) {
+  return useQuery<VesselPosition>({
+    queryKey: ['vessel-realtime', mmsi],
+    queryFn: () => apiFetch<VesselPosition>(`/api/v1/vessels/${mmsi}/realtime`),
+    enabled: mmsi !== null,
+    refetchInterval: 5_000,
+    retry: false,
   })
 }
 
