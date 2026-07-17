@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.aircraft import router as aircraft_router
 from app.api.alerts import router as alerts_router
 from app.api.exports import router as exports_router
+from app.api.fleets import router as fleets_router
 from app.api.geofences import router as geofences_router
 from app.api.idle_events import router as idle_events_router
 from app.api.monitoring import router as monitoring_router
@@ -92,6 +93,7 @@ def create_app() -> FastAPI:
     app.include_router(ports_router)
     app.include_router(trade_flows_router)
     app.include_router(idle_events_router)
+    app.include_router(fleets_router)
     app.include_router(geofences_router)
     app.include_router(alerts_router)
     app.include_router(sse_router)
