@@ -1,4 +1,5 @@
 import type { AircraftPosition } from '../../types'
+import { useT } from '../../i18n/useI18n'
 
 interface AircraftInfoProps {
   hex: string | null
@@ -6,6 +7,8 @@ interface AircraftInfoProps {
 }
 
 export function AircraftInfo({ hex, positions }: AircraftInfoProps) {
+  const t = useT()
+
   if (hex === null) {
     return (
       <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -14,7 +17,7 @@ export function AircraftInfo({ hex, positions }: AircraftInfoProps) {
             <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <p className="text-sm text-ocean-400">No aircraft selected</p>
+        <p className="text-sm text-ocean-400">{t('aircraft.noAircraft')}</p>
       </div>
     )
   }
@@ -24,7 +27,7 @@ export function AircraftInfo({ hex, positions }: AircraftInfoProps) {
   if (!aircraft) {
     return (
       <div className="rounded-xl border border-ocean-700/50 bg-ocean-900/50 p-4 text-center">
-        <p className="text-sm text-ocean-400">Aircraft {hex} not found</p>
+        <p className="text-sm text-ocean-400">{t('aircraft.notFound')} {hex}</p>
       </div>
     )
   }
@@ -37,19 +40,19 @@ export function AircraftInfo({ hex, positions }: AircraftInfoProps) {
             <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
           </svg>
           <div>
-            <h2 className="text-base font-bold text-white">{aircraft.flight ?? 'Unknown Flight'}</h2>
+            <h2 className="text-base font-bold text-white">{aircraft.flight ?? t('aircraft.unknownFlight')}</h2>
             <p className="font-mono text-[10px] text-ocean-400">HEX {aircraft.hex}</p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        <StatCard label="Altitude" value={aircraft.alt !== null ? `${aircraft.alt}` : '—'} unit="ft" />
-        <StatCard label="Ground Speed" value={aircraft.gs !== null ? `${aircraft.gs}` : '—'} unit="kn" />
-        <StatCard label="Track" value={aircraft.track !== null ? `${aircraft.track}` : '—'} unit="°" />
-        <StatCard label="Type" value={aircraft.type ?? '—'} />
-        <StatCard label="Registration" value={aircraft.reg ?? '—'} />
-        <StatCard label="Position" value={`${aircraft.lat.toFixed(2)}, ${aircraft.lon.toFixed(2)}`} />
+        <StatCard label={t('field.altitude')} value={aircraft.alt !== null ? `${aircraft.alt}` : '—'} unit="ft" />
+        <StatCard label={t('field.groundSpeed')} value={aircraft.gs !== null ? `${aircraft.gs}` : '—'} unit="kn" />
+        <StatCard label={t('field.track')} value={aircraft.track !== null ? `${aircraft.track}` : '—'} unit="°" />
+        <StatCard label={t('field.type')} value={aircraft.type ?? '—'} />
+        <StatCard label={t('field.registration')} value={aircraft.reg ?? '—'} />
+        <StatCard label={t('field.position')} value={`${aircraft.lat.toFixed(2)}, ${aircraft.lon.toFixed(2)}`} />
       </div>
     </div>
   )

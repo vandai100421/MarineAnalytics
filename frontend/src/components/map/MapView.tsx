@@ -6,10 +6,13 @@ import { PathLayer, TextLayer, ScatterplotLayer } from '@deck.gl/layers'
 import { useMapStore } from '../../store/mapStore'
 import { useVesselPositions, useVesselTrack, useVesselCluster } from '../../api/vessels'
 import { useAircraftPositions } from '../../api/aircraft'
+import { usePorts } from '../../api/ports'
 import { useSSE } from '../../hooks/useSSE'
+import { useI18n } from '../../i18n/useI18n'
 import { createVesselLayer } from './VesselLayer'
 import { createHeatmapLayer } from './HeatmapLayer'
 import { createAircraftLayer } from './AircraftLayer'
+import { createPortLayer } from './PortLayer'
 import type { VesselPosition } from '../../types'
 
 const MAP_STYLE_URL = import.meta.env.VITE_MAP_STYLE_URL ?? '/styles/osm-style.json'
@@ -31,10 +34,14 @@ export function MapView() {
   const setSelectedMmsi = useMapStore((state) => state.setSelectedMmsi)
   const selectedHex = useMapStore((state) => state.selectedHex)
   const setSelectedHex = useMapStore((state) => state.setSelectedHex)
+  const selectedPortId = useMapStore((state) => state.selectedPortId)
+  const setSelectedPortId = useMapStore((state) => state.setSelectedPortId)
+  const layerToggles = useMapStore((state) => state.layerToggles)
   const realtimePositions = useMapStore((state) => state.realtimePositions)
   const updatePositions = useMapStore((state) => state.updatePositions)
   const mapMode = useMapStore((state) => state.mapMode)
   const playbackIndex = useMapStore((state) => state.playbackIndex)
+  const { t } = useI18n()
   const [zoom, setZoom] = useState(INITIAL_VIEW_STATE.zoom)
   const [viewState, setViewState] = useState({
     longitude: INITIAL_VIEW_STATE.longitude,
@@ -58,7 +65,13 @@ export function MapView() {
   // Only fetch individual positions when zoomed in
   const { data: restPositions } = useVesselPositions(
     isDetailZoom ? debouncedBbox : null,
-    filters.minSog,
+    {
+      minSog: filters.minSog,
+      maxSog: filters.maxSog,
+      shipType: filters.shipTypes?.[0],
+      name: filters.name,
+      destination: filters.destination,
+    },
   )
   // Fetch cluster data when zoomed out
   const { data: clusterData } = useVesselCluster(
@@ -66,6 +79,7 @@ export function MapView() {
     zoom,
   )
   const { data: aircraftData } = useAircraftPositions(debouncedBbox)
+  const { data: portData } = usePorts(debouncedBbox, layerToggles.ports || layerToggles.tradeflow)
 
   const bboxStr = useMemo(() => {
     if (!debouncedBbox) return null
@@ -201,6 +215,16 @@ export function MapView() {
       )
     }
 
+    if (layerToggles.ports && portData && portData.length > 0) {
+      result.push(
+        ...createPortLayer({
+          data: portData,
+          onSelect: setSelectedPortId,
+          selectedPortId,
+        }),
+      )
+    }
+
     return result
   }, [
     allPositions,
@@ -216,6 +240,10 @@ export function MapView() {
     aircraftData,
     selectedHex,
     setSelectedHex,
+    layerToggles,
+    portData,
+    selectedPortId,
+    setSelectedPortId,
   ])
 
   return (
@@ -247,35 +275,9 @@ export function MapView() {
         />
       </DeckGL>
 
-      {/* Layer mode toggle - bottom left */}
-      <div className="glass absolute bottom-6 left-6 z-10 flex flex-col gap-1 rounded-xl p-1.5">
-        {([
-          { mode: 'vessels' as const, label: 'Vessels', icon: 'M3 6l9-3 9 3v15l-9-3-9 3V6z' },
-          { mode: 'aircraft' as const, label: 'Aircraft', icon: 'M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z' },
-          { mode: 'both' as const, label: 'Both', icon: 'M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z' },
-          { mode: 'heatmap' as const, label: 'Heatmap', icon: 'M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z' },
-        ]).map(({ mode, label, icon }) => (
-          <button
-            key={mode}
-            onClick={() => useMapStore.getState().setMapMode(mode)}
-            className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
-              mapMode === mode
-                ? 'bg-sea-500 text-white shadow-lg shadow-sea-500/30'
-                : 'text-ocean-300 hover:bg-ocean-700/50 hover:text-white'
-            }`}
-            title={label}
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d={icon} strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            {label}
-          </button>
-        ))}
-      </div>
-
       {/* Zoom indicator - bottom right */}
       <div className="glass absolute bottom-6 right-6 z-10 rounded-lg px-3 py-1.5 text-xs font-mono text-ocean-300">
-        Zoom: {zoom.toFixed(1)} {isDetailZoom ? '· Detail' : '· Cluster'}
+        Zoom: {zoom.toFixed(1)} {isDetailZoom ? `· ${t('zoom.detail')}` : `· ${t('zoom.cluster')}`}
       </div>
     </div>
   )

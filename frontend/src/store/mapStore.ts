@@ -1,23 +1,48 @@
 import { create } from 'zustand'
 import type { BoundingBox, VesselFilters, VesselPosition } from '../types'
 
+export type MapMode = 'vessels' | 'heatmap' | 'aircraft' | 'both'
+
+interface LayerToggles {
+  ports: boolean
+  tradeflow: boolean
+  anchorage: boolean
+}
+
+interface RightPanelSections {
+  position: boolean
+  particulars: boolean
+  voyage: boolean
+  track: boolean
+}
+
 interface MapState {
   bbox: BoundingBox | null
   filters: VesselFilters
   selectedMmsi: number | null
   selectedHex: string | null
+  selectedPortId: number | null
   realtimePositions: Map<number, VesselPosition>
-  view: 'map' | 'dashboard'
-  mapMode: 'vessels' | 'heatmap' | 'aircraft' | 'both'
+  mapMode: MapMode
+  layerToggles: LayerToggles
   playbackIndex: number
+  searchQuery: string
+  leftPanelOpen: boolean
+  rightPanelOpen: boolean
+  rightPanelSections: RightPanelSections
   setBbox: (bbox: BoundingBox | null) => void
   setFilters: (filters: VesselFilters) => void
   setSelectedMmsi: (mmsi: number | null) => void
   setSelectedHex: (hex: string | null) => void
+  setSelectedPortId: (portId: number | null) => void
   updatePositions: (positions: VesselPosition[]) => void
-  setView: (view: 'map' | 'dashboard') => void
-  setMapMode: (mode: 'vessels' | 'heatmap' | 'aircraft' | 'both') => void
+  setMapMode: (mode: MapMode) => void
+  setLayerToggle: (key: keyof LayerToggles, value: boolean) => void
   setPlaybackIndex: (index: number) => void
+  setSearchQuery: (query: string) => void
+  setLeftPanelOpen: (open: boolean) => void
+  setRightPanelOpen: (open: boolean) => void
+  toggleSection: (section: keyof RightPanelSections) => void
 }
 
 export const useMapStore = create<MapState>((set) => ({
@@ -25,14 +50,25 @@ export const useMapStore = create<MapState>((set) => ({
   filters: {},
   selectedMmsi: null,
   selectedHex: null,
+  selectedPortId: null,
   realtimePositions: new Map(),
-  view: 'map',
   mapMode: 'vessels',
+  layerToggles: { ports: false, tradeflow: false, anchorage: false },
   playbackIndex: 0,
+  searchQuery: '',
+  leftPanelOpen: true,
+  rightPanelOpen: true,
+  rightPanelSections: {
+    position: true,
+    particulars: true,
+    voyage: true,
+    track: true,
+  },
   setBbox: (bbox) => set({ bbox }),
   setFilters: (filters) => set({ filters }),
   setSelectedMmsi: (mmsi: number | null) => set({ selectedMmsi: mmsi }),
   setSelectedHex: (hex: string | null) => set({ selectedHex: hex }),
+  setSelectedPortId: (portId: number | null) => set({ selectedPortId: portId }),
   updatePositions: (positions) =>
     set((state) => {
       const next = new Map(state.realtimePositions)
@@ -41,7 +77,20 @@ export const useMapStore = create<MapState>((set) => ({
       }
       return { realtimePositions: next }
     }),
-  setView: (view) => set({ view }),
   setMapMode: (mapMode) => set({ mapMode }),
+  setLayerToggle: (key, value) =>
+    set((state) => ({
+      layerToggles: { ...state.layerToggles, [key]: value },
+    })),
   setPlaybackIndex: (playbackIndex) => set({ playbackIndex }),
+  setSearchQuery: (searchQuery) => set({ searchQuery }),
+  setLeftPanelOpen: (leftPanelOpen) => set({ leftPanelOpen }),
+  setRightPanelOpen: (rightPanelOpen) => set({ rightPanelOpen }),
+  toggleSection: (section) =>
+    set((state) => ({
+      rightPanelSections: {
+        ...state.rightPanelSections,
+        [section]: !state.rightPanelSections[section],
+      },
+    })),
 }))

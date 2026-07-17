@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { useT } from '../../i18n/useI18n'
 
 interface TimelineScrubberProps {
   total: number
@@ -9,6 +10,7 @@ export function TimelineScrubber({ total, onIndexChange }: TimelineScrubberProps
   const [current, setCurrent] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [speed, setSpeed] = useState(1)
+  const t = useT()
 
   const handleChange = useCallback(
     (value: number) => {
@@ -49,6 +51,7 @@ export function TimelineScrubber({ total, onIndexChange }: TimelineScrubberProps
             onClick={() => setIsPlaying(!isPlaying)}
             disabled={current >= total - 1}
             className="flex h-9 w-9 items-center justify-center rounded-lg bg-sea-500 text-white transition-all hover:bg-sea-600 disabled:cursor-not-allowed disabled:opacity-40"
+            title={isPlaying ? t('playback.pause') : t('playback.play')}
           >
             {isPlaying ? (
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
@@ -64,7 +67,7 @@ export function TimelineScrubber({ total, onIndexChange }: TimelineScrubberProps
           <button
             onClick={handleReset}
             className="flex h-9 w-9 items-center justify-center rounded-lg bg-ocean-700/50 text-ocean-300 transition-all hover:bg-ocean-700 hover:text-white"
-            title="Reset"
+            title={t('playback.reset')}
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M3 12a9 9 0 1 0 3-6.7L3 8" strokeLinecap="round" strokeLinejoin="round" />
@@ -90,7 +93,6 @@ export function TimelineScrubber({ total, onIndexChange }: TimelineScrubberProps
         </div>
       </div>
 
-      {/* Progress bar */}
       <div className="relative mb-2">
         <input
           type="range"
@@ -109,7 +111,7 @@ export function TimelineScrubber({ total, onIndexChange }: TimelineScrubberProps
         <span className="font-mono text-ocean-300">
           {current + 1} / {total}
         </span>
-        <span className="text-ocean-500">Track Playback</span>
+        <span className="text-ocean-500">{t('section.trackHistory')}</span>
       </div>
     </div>
   )

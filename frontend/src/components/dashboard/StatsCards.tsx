@@ -1,14 +1,17 @@
+import { memo } from 'react'
 import { useStatsOverview } from '../../api/stats'
+import { useT } from '../../i18n/useI18n'
 
-export function StatsCards() {
+function StatsCardsComponent() {
   const { data, isLoading } = useStatsOverview()
+  const t = useT()
 
   if (isLoading || !data) {
     return (
       <div className="grid grid-cols-3 gap-2">
-        <Card label="Active" value="—" />
-        <Card label="Total" value="—" />
-        <Card label="Avg Speed" value="—" />
+        <Card label={t('stat.active')} value="—" />
+        <Card label={t('stat.total')} value="—" />
+        <Card label={t('stat.avgSpeed')} value="—" />
       </div>
     )
   }
@@ -16,21 +19,21 @@ export function StatsCards() {
   return (
     <div className="grid grid-cols-3 gap-2">
       <Card
-        label="Active"
+        label={t('stat.active')}
         value={String(data.active_vessels)}
         icon="M5 13l4 4L19 7"
         color="text-sea-300"
         bg="from-sea-500/10 to-transparent"
       />
       <Card
-        label="Total"
+        label={t('stat.total')}
         value={String(data.total_vessels)}
         icon="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-2a4 4 0 100-8 4 4 0 000 8z"
         color="text-green-400"
         bg="from-green-500/10 to-transparent"
       />
       <Card
-        label="Avg Speed"
+        label={t('stat.avgSpeed')}
         value={`${data.avg_sog}`}
         unit="kn"
         icon="M13 10V3L4 14h7v7l9-11h-7z"
@@ -40,6 +43,8 @@ export function StatsCards() {
     </div>
   )
 }
+
+export const StatsCards = memo(StatsCardsComponent)
 
 function Card({
   label,

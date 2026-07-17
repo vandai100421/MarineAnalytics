@@ -18,3 +18,26 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
 
   return response.json() as Promise<T>
 }
+
+export async function downloadCSV(path: string, filename: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}${path}`)
+  if (!response.ok) {
+    throw new Error(`Export failed: ${response.status}`)
+  }
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+export async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  return apiFetch<T>(path, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}

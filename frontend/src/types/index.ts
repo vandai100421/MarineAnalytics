@@ -21,7 +21,34 @@ export interface Vessel {
   dim_d: number | null
   destination: string | null
   eta: string | null
+  photo_url: string | null
   updated_at: string
+}
+
+export interface VesselSearchResult {
+  mmsi: number
+  name: string | null
+  ship_type: number | null
+  ship_type_name: string | null
+  callsign: string | null
+  imo: number | null
+  destination: string | null
+}
+
+export interface VesselListItem {
+  mmsi: number
+  name: string | null
+  ship_type: number | null
+  ship_type_name: string | null
+  destination: string | null
+  updated_at: string
+}
+
+export interface PaginatedResponse<T> {
+  total: number
+  limit: number
+  offset: number
+  items: T[]
 }
 
 export interface PositionReport {
@@ -52,6 +79,8 @@ export interface VesselFilters {
   shipTypes?: number[]
   minSog?: number
   maxSog?: number
+  name?: string
+  destination?: string
 }
 
 export interface AircraftPosition {
@@ -65,6 +94,110 @@ export interface AircraftPosition {
   flight: string | null
   reg: string | null
   type: string | null
+}
+
+export interface TimeSeriesPoint {
+  ts: string
+  vessel_count: number
+  avg_sog: number
+}
+
+export interface TimeSeriesResponse {
+  period: string
+  points: TimeSeriesPoint[]
+}
+
+export interface AlertItem {
+  id: number
+  mmsi: number
+  geofence_id: number | null
+  ts: string
+  event_type: string
+  lat: number | null
+  lon: number | null
+}
+
+export interface AlertsListResponse {
+  total: number
+  alerts: AlertItem[]
+}
+
+export interface GeofenceResponse {
+  id: number
+  name: string
+  type: string
+  coordinates: number[][]
+  description: string | null
+  created_at: string
+}
+
+export interface OverviewResponse {
+  active_vessels: number
+  total_vessels: number
+  avg_sog: number
+}
+
+export interface TypeCount {
+  ship_type: number
+  ship_type_name: string
+  count: number
+}
+
+export interface ByTypeResponse {
+  types: TypeCount[]
+}
+
+export interface Port {
+  id: number
+  name: string
+  country_code: string | null
+  unlocode: string | null
+  lat: number
+  lon: number
+  radius_m: number
+  type: string
+}
+
+export interface PortArrival {
+  id: number
+  mmsi: number
+  port_id: number
+  arrived_at: string
+  departed_at: string | null
+  dwell_minutes: number | null
+  anchorage: boolean
+  lat: number | null
+  lon: number | null
+}
+
+export interface PortArrivalsListResponse {
+  total: number
+  arrivals: PortArrival[]
+}
+
+export interface PortCongestion {
+  port_id: number
+  name: string
+  country_code: string | null
+  vessel_count: number
+  avg_dwell_minutes: number
+  anchorage_count: number
+}
+
+export interface PortCongestionListResponse {
+  ports: PortCongestion[]
+}
+
+export interface PredictedEta {
+  mmsi: number
+  destination_raw: string | null
+  matched_port: Port | null
+  match_confidence: number
+  distance_nm: number | null
+  current_sog: number
+  eta_hours: number | null
+  eta_time: string | null
+  ais_eta: string | null
 }
 
 export const SHIP_TYPE_OPTIONS = [

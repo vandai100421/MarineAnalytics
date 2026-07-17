@@ -1,20 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { apiFetch } from '../../api/client'
-
-interface AlertItem {
-  id: number
-  mmsi: number
-  geofence_id: number | null
-  ts: string
-  event_type: string
-  lat: number | null
-  lon: number | null
-}
-
-interface AlertsListResponse {
-  total: number
-  alerts: AlertItem[]
-}
+import { exportAlertsCSV } from '../../api/exports'
+import type { AlertsListResponse } from '../../types'
+import { useI18n } from '../../i18n/useI18n'
 
 export function AlertPanel() {
   const { data, isLoading, refetch } = useQuery<AlertsListResponse>({
@@ -22,6 +10,7 @@ export function AlertPanel() {
     queryFn: () => apiFetch<AlertsListResponse>('/api/v1/alerts?limit=20'),
     refetchInterval: 30_000,
   })
+  const { t, lang } = useI18n()
 
   if (isLoading) {
     return (
@@ -40,7 +29,7 @@ export function AlertPanel() {
           <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
           <circle cx="12" cy="12" r="9" />
         </svg>
-        <p className="text-xs text-ocean-400">No alerts. Geofence violations will appear here.</p>
+        <p className="text-xs text-ocean-400">{t('alert.noAlerts')}</p>
       </div>
     )
   }
@@ -49,18 +38,30 @@ export function AlertPanel() {
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-ocean-400">
-          {data?.total ?? 0} Total Alerts
+          {data?.total ?? 0} {t('alert.total')}
         </p>
-        <button
-          onClick={() => refetch()}
-          className="flex items-center gap-1 text-[11px] text-sea-300 hover:text-sea-200"
-        >
-          <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 12a9 9 0 1 0 3-6.7L3 8" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M3 3v5h5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => exportAlertsCSV()}
+            className="flex items-center gap-1 text-[11px] text-sea-300 hover:text-sea-200"
+            title={t('port.exportArrivals')}
+          >
+            <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            CSV
+          </button>
+          <button
+            onClick={() => refetch()}
+            className="flex items-center gap-1 text-[11px] text-sea-300 hover:text-sea-200"
+          >
+            <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 12a9 9 0 1 0 3-6.7L3 8" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M3 3v5h5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {t('alert.refresh')}
+          </button>
+        </div>
       </div>
       <div className="space-y-1.5">
         {alerts.map((alert) => (
@@ -83,15 +84,15 @@ export function AlertPanel() {
                     <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                   )}
                 </svg>
-                {alert.event_type === 'enter' ? 'Entered' : 'Exited'}
+                {alert.event_type === 'enter' ? t('alert.entered') : t('alert.exited')}
               </span>
               <span className="font-mono text-[10px] text-ocean-500">
-                {new Date(alert.ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                {new Date(alert.ts).toLocaleTimeString(lang === 'vi' ? 'vi-VN' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
             <div className="mt-1 text-xs text-ocean-300">
               MMSI <span className="font-mono font-medium text-ocean-100">{alert.mmsi}</span>
-              {alert.geofence_id && <span className="text-ocean-500"> · Geofence #{alert.geofence_id}</span>}
+              {alert.geofence_id && <span className="text-ocean-500"> · #{alert.geofence_id}</span>}
             </div>
           </div>
         ))}
