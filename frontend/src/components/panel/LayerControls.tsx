@@ -10,11 +10,12 @@ const MODES: { mode: MapMode; label: TranslationKey; icon: string }[] = [
   { mode: 'heatmap', label: 'layer.density', icon: 'M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z' },
 ]
 
-const ANALYTICS_LAYERS: { key: 'ports' | 'tradeflow' | 'anchorage' | 'idle'; label: TranslationKey; icon: string }[] = [
+const ANALYTICS_LAYERS: { key: 'ports' | 'tradeflow' | 'anchorage' | 'idle' | 'fleet'; label: TranslationKey; icon: string }[] = [
   { key: 'ports', label: 'layer.ports', icon: 'M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z' },
   { key: 'tradeflow', label: 'layer.tradeFlow', icon: 'M3 17l6-6 4 4 8-8M14 7h7v7' },
   { key: 'anchorage', label: 'layer.anchorage', icon: 'M12 2a10 10 0 100 20 10 10 0 000-20zM12 8v4M12 16h.01' },
   { key: 'idle', label: 'layer.idle', icon: 'M12 2v6M12 16v6M4.93 4.93l4.24 4.24M14.83 14.83l4.24 4.24M2 12h6M16 12h6' },
+  { key: 'fleet', label: 'layer.fleet', icon: 'M3 6h18M3 12h18M3 18h18' },
 ]
 
 function LayerControlsComponent() {

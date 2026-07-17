@@ -8,6 +8,7 @@ interface LayerToggles {
   tradeflow: boolean
   anchorage: boolean
   idle: boolean
+  fleet: boolean
 }
 
 interface RightPanelSections {
@@ -23,6 +24,7 @@ interface MapState {
   selectedMmsi: number | null
   selectedHex: string | null
   selectedPortId: number | null
+  selectedFleetId: number | null
   realtimePositions: Map<number, VesselPosition>
   mapMode: MapMode
   layerToggles: LayerToggles
@@ -36,6 +38,7 @@ interface MapState {
   setSelectedMmsi: (mmsi: number | null) => void
   setSelectedHex: (hex: string | null) => void
   setSelectedPortId: (portId: number | null) => void
+  setSelectedFleetId: (fleetId: number | null) => void
   updatePositions: (positions: VesselPosition[]) => void
   setMapMode: (mode: MapMode) => void
   setLayerToggle: (key: keyof LayerToggles, value: boolean) => void
@@ -52,9 +55,10 @@ export const useMapStore = create<MapState>((set) => ({
   selectedMmsi: null,
   selectedHex: null,
   selectedPortId: null,
+  selectedFleetId: null,
   realtimePositions: new Map(),
   mapMode: 'vessels',
-  layerToggles: { ports: false, tradeflow: false, anchorage: false, idle: false },
+  layerToggles: { ports: false, tradeflow: false, anchorage: false, idle: false, fleet: false },
   playbackIndex: 0,
   searchQuery: '',
   leftPanelOpen: true,
@@ -70,6 +74,7 @@ export const useMapStore = create<MapState>((set) => ({
   setSelectedMmsi: (mmsi: number | null) => set({ selectedMmsi: mmsi }),
   setSelectedHex: (hex: string | null) => set({ selectedHex: hex }),
   setSelectedPortId: (portId: number | null) => set({ selectedPortId: portId }),
+  setSelectedFleetId: (fleetId: number | null) => set({ selectedFleetId: fleetId }),
   updatePositions: (positions) =>
     set((state) => {
       const next = new Map(state.realtimePositions)

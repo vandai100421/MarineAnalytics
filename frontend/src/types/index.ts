@@ -242,6 +242,39 @@ export interface IdleSummary {
   avg_duration_minutes: number
 }
 
+export interface Fleet {
+  id: number
+  name: string
+  description: string | null
+  color: string
+  created_at: string
+  member_count: number
+}
+
+export interface FleetCreate {
+  name: string
+  description?: string
+  color: string
+}
+
+export interface FleetMember {
+  id: number
+  fleet_id: number
+  mmsi: number
+  added_at: string
+  vessel_name: string | null
+  ship_type_name: string | null
+}
+
+export interface FleetStats {
+  fleet_id: number
+  name: string
+  total_members: number
+  active_members: number
+  avg_sog: number
+  idle_count: number
+}
+
 export const SHIP_TYPE_OPTIONS = [
   { value: 30, label: 'Fishing' },
   { value: 31, label: 'Towing' },

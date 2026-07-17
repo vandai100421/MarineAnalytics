@@ -9,6 +9,7 @@ import { useAircraftPositions } from '../../api/aircraft'
 import { usePorts } from '../../api/ports'
 import { useTradeFlows } from '../../api/trade_flows'
 import { useIdleEvents } from '../../api/idle'
+import { useFleets, useAllFleetMembers } from '../../api/fleets'
 import { useSSE } from '../../hooks/useSSE'
 import { useI18n } from '../../i18n/useI18n'
 import { createVesselLayer } from './VesselLayer'
@@ -17,6 +18,8 @@ import { createAircraftLayer } from './AircraftLayer'
 import { createPortLayer } from './PortLayer'
 import { createTradeFlowLayer } from './TradeFlowLayer'
 import { createIdleLayer } from './IdleLayer'
+import { createFleetLayer } from './FleetLayer'
+import { hexToRgb } from '../../utils/colors'
 import type { VesselPosition } from '../../types'
 
 const MAP_STYLE_URL = import.meta.env.VITE_MAP_STYLE_URL ?? '/styles/osm-style.json'
@@ -92,6 +95,8 @@ export function MapView() {
   }, [debouncedBbox])
 
   const { data: idleData } = useIdleEvents(bboxStr, true, 200)
+  const { data: fleetsData } = useFleets()
+  const { data: allFleetMembers } = useAllFleetMembers()
 
   // Only use SSE when zoomed in
   useSSE({
@@ -240,6 +245,25 @@ export function MapView() {
       result.push(...createIdleLayer({ data: idleData.events, onSelect: setSelectedMmsi }))
     }
 
+    if (
+      layerToggles.fleet &&
+      allFleetMembers &&
+      allFleetMembers.length > 0 &&
+      allPositions.length > 0
+    ) {
+      const fleetColors = new Map<number, [number, number, number]>()
+      for (const m of allFleetMembers) {
+        fleetColors.set(m.mmsi, hexToRgb(m.color))
+      }
+      result.push(
+        ...createFleetLayer({
+          data: allPositions,
+          fleetColors,
+          onSelect: setSelectedMmsi,
+        }),
+      )
+    }
+
     return result
   }, [
     allPositions,
@@ -259,6 +283,8 @@ export function MapView() {
     portData,
     tradeFlowData,
     idleData,
+    fleetsData,
+    allFleetMembers,
     selectedPortId,
     setSelectedPortId,
   ])

@@ -33,6 +33,7 @@ export const translations = {
     'section.baseLayers': 'Lớp nền',
     'section.analyticsOverlays': 'Lớp phân tích',
     'section.portCongestion': 'Tắc nghẽn cảng',
+    'section.fleetManager': 'Quản lý đội tàu',
 
     'layer.vessels': 'Tàu thuyền',
     'layer.aircraft': 'Máy bay',
@@ -42,6 +43,7 @@ export const translations = {
     'layer.tradeFlow': 'Luồng thương mại',
     'layer.anchorage': 'Vùng đỗ tàu',
     'layer.idle': 'Tàu dừng',
+    'layer.fleet': 'Đội tàu',
 
     'filter.minSpeed': 'Tốc độ tối thiểu',
     'filter.shipType': 'Loại tàu',
@@ -93,6 +95,11 @@ export const translations = {
     'port.exportArrivals': 'Xuất CSV',
     'port.dwell': 'phút dừng',
     'port.anch': 'ĐỖ NEO',
+
+    'fleet.noFleets': 'Chưa có đội tàu. Tạo đội tàu để theo dõi nhóm tàu.',
+    'fleet.namePlaceholder': 'Tên đội tàu...',
+    'fleet.delete': 'Xóa đội tàu',
+    'fleet.active': 'Đang chạy',
 
     'chart.vesselsByType': 'Tàu theo loại',
     'chart.timeline': 'Theo thời gian',
@@ -180,6 +187,7 @@ export const translations = {
     'section.baseLayers': 'Base Layers',
     'section.analyticsOverlays': 'Analytics Overlays',
     'section.portCongestion': 'Port Congestion',
+    'section.fleetManager': 'Fleet Manager',
 
     'layer.vessels': 'Vessels',
     'layer.aircraft': 'Aircraft',
@@ -189,6 +197,7 @@ export const translations = {
     'layer.tradeFlow': 'Trade Flow',
     'layer.anchorage': 'Anchorage',
     'layer.idle': 'Idle Vessels',
+    'layer.fleet': 'Fleet',
 
     'filter.minSpeed': 'Min Speed',
     'filter.shipType': 'Ship Type',
@@ -240,6 +249,11 @@ export const translations = {
     'port.exportArrivals': 'CSV',
     'port.dwell': 'm dwell',
     'port.anch': 'ANCH',
+
+    'fleet.noFleets': 'No fleets yet. Create a fleet to track vessel groups.',
+    'fleet.namePlaceholder': 'Fleet name...',
+    'fleet.delete': 'Delete fleet',
+    'fleet.active': 'Active',
 
     'chart.vesselsByType': 'Vessels by Type',
     'chart.timeline': 'Timeline',
