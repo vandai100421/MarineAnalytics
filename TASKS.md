@@ -40,7 +40,7 @@ Owner chính: **BE1** (module khó nhất).
 - [x] **T1.7** [BE1] Structured logging + error metrics (decode error count, msg/sec)
 - [x] **T1.8** [BE2] `models/` ORM: Vessel, PositionReport, Geofence, Alert (match schema ARCHITECTURE.md)
 - [x] **T1.9** [BE2] `schemas/` pydantic: VesselResponse, PositionResponse, PaginatedResponse
-- [ ] **T1.10** [DO] Grafana + Prometheus: dashboard msg/sec, DB size, Redis ops
+- [x] **T1.10** [DO] Grafana + Prometheus: dashboard msg/sec, DB size, Redis ops
 
 > **Demo Sprint 1**: Ingestion chạy ổn định, DB có data thật, Redis có latest position.
 
@@ -132,11 +132,11 @@ Owner chính: **BE1** + **FE1**.
 - [x] **T7.2** [DO] Downsampling: continuous aggregate daily cho track dài hạn
 - [x] **T7.3** [BE1] Index tuning: EXPLAIN ANALYZE các query hot, thêm index nếu thiếu
 - [x] **T7.4** [BE2] Rate limit REST API + SSE max clients
-- [ ] **T7.5** [DO] Backup DB (pg_basebackup) + restore test
+- [x] **T7.5** [DO] Backup DB (pg_basebackup) + restore test
 - [x] **T7.6** [DO] Grafana alerts: WS down, DB disk > 70%, error rate > 1%
-- [ ] **T7.7** [TL] Load test: simulate 1000 SSE clients + 10k msg/s ingestion
+- [x] **T7.7** [TL] Load test: simulate 1000 SSE clients + 10k msg/s ingestion
 - [x] **T7.8** [TL] Production deploy guide (README + deploy script)
-- [ ] **T7.9** [TL] E2E smoke test full pipeline
+- [x] **T7.9** [TL] E2E smoke test full pipeline
 
 > **= Phase 3 DONE = Project complete**
 
