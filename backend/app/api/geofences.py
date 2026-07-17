@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.alerts.geofence_engine import invalidate_geofence_cache
 from app.core.db import get_session
 from app.core.errors import ProblemDetail
 from app.repositories.geofence_repository import GeofenceRepository, _geojson_to_coords
@@ -29,6 +30,7 @@ async def create_geofence(
         coordinates=body.coordinates,
         description=body.description,
     )
+    invalidate_geofence_cache()
     result = await repo.get_by_id(geofence.id)
     if result is None:
         raise ProblemDetail(status_code=500, title="Error", detail="Failed to read geofence")
@@ -75,6 +77,7 @@ async def delete_geofence(
             title="Not Found",
             detail=f"Geofence {geofence_id} not found",
         )
+    invalidate_geofence_cache()
 
 
 def _to_response(geofence: object, geojson: str | None) -> GeofenceResponse:

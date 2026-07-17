@@ -21,4 +21,5 @@ class Vessel(Base):
     dim_d: Mapped[int | None] = mapped_column(SmallInteger)
     destination: Mapped[str | None] = mapped_column(Text)
     eta: Mapped[datetime | None]
+    photo_url: Mapped[str | None] = mapped_column(Text)
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())

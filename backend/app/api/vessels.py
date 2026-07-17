@@ -9,16 +9,51 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_session
 from app.core.errors import ProblemDetail
 from app.core.redis import get_redis
+from app.models.vessel import Vessel
 from app.repositories.position_repository import PositionRepository
 from app.repositories.vessel_repository import VesselRepository
+from app.schemas.port import PredictedEtaResponse
 from app.schemas.position import (
+    PaginatedResponse,
     PositionReportResponse,
     TrackResponse,
+    VesselListResponse,
     VesselPositionResponse,
 )
-from app.schemas.vessel import VesselResponse
+from app.schemas.vessel import VesselPhotoUpdate, VesselResponse, VesselSearchResult
+from app.services.eta_calculator import EtaCalculator
 
 router = APIRouter(prefix="/api/v1/vessels", tags=["vessels"])
+
+
+@router.get("/search", response_model=list[VesselSearchResult])
+async def search_vessels(
+    q: str = Query(..., min_length=1, description="Search by name, MMSI, IMO, callsign"),
+    limit: int = Query(10, ge=1, le=50),
+    session: AsyncSession = Depends(get_session),
+) -> list[VesselSearchResult]:
+    repo = VesselRepository(session)
+    vessels = await repo.search(q, limit)
+    return [VesselSearchResult.model_validate(v) for v in vessels]
+
+
+@router.get("/list", response_model=PaginatedResponse[VesselListResponse])
+async def list_vessels(
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    ship_type: int | None = Query(None),
+    name: str | None = Query(None),
+    destination: str | None = Query(None),
+    session: AsyncSession = Depends(get_session),
+) -> PaginatedResponse[VesselListResponse]:
+    repo = VesselRepository(session)
+    vessels, total = await repo.list_vessels(limit, offset, ship_type, name, destination)
+    return PaginatedResponse(
+        total=total,
+        limit=limit,
+        offset=offset,
+        items=[VesselListResponse.model_validate(v) for v in vessels],
+    )
 
 
 @router.get("/positions", response_model=list[VesselPositionResponse])
@@ -26,6 +61,9 @@ async def get_positions(
     bbox: str | None = Query(None, description="min_lon,min_lat,max_lon,max_lat"),
     ship_type: int | None = Query(None, description="Filter by AIS ship type code"),
     min_sog: float | None = Query(None, description="Minimum speed over ground"),
+    max_sog: float | None = Query(None, description="Maximum speed over ground"),
+    name: str | None = Query(None, description="Filter by vessel name (substring)"),
+    destination: str | None = Query(None, description="Filter by destination (substring)"),
     redis: Redis = Depends(get_redis),  # type: ignore[type-arg]
     session: AsyncSession = Depends(get_session),
 ) -> list[VesselPositionResponse]:
@@ -40,6 +78,10 @@ async def get_positions(
     for key in keys:
         pipe.hgetall(key)
     results = await pipe.execute()
+
+    name_lower = name.lower() if name else None
+    dest_lower = destination.lower() if destination else None
+    vessel_cache: dict[int, Vessel | None] = {}
 
     positions: list[VesselPositionResponse] = []
     for data in results:
@@ -61,11 +103,23 @@ async def get_positions(
         sog = _to_float(data.get("sog")) or 0.0
         if min_sog is not None and sog < min_sog:
             continue
+        if max_sog is not None and sog > max_sog:
+            continue
 
-        if ship_type is not None:
-            vessel_repo = VesselRepository(session)
-            vessel = await vessel_repo.get_by_mmsi(mmsi)
-            if vessel is None or vessel.ship_type != ship_type:
+        if ship_type is not None or name_lower or dest_lower:
+            if mmsi not in vessel_cache:
+                vessel_repo = VesselRepository(session)
+                vessel_cache[mmsi] = await vessel_repo.get_by_mmsi(mmsi)
+            vessel = vessel_cache[mmsi]
+            if vessel is None:
+                continue
+            if ship_type is not None and vessel.ship_type != ship_type:
+                continue
+            if name_lower and (vessel.name is None or name_lower not in vessel.name.lower()):
+                continue
+            if dest_lower and (
+                vessel.destination is None or dest_lower not in vessel.destination.lower()
+            ):
                 continue
 
         positions.append(
@@ -237,6 +291,43 @@ async def get_vessel_track(
         total=total,
         points=[PositionReportResponse.model_validate(r) for r in reports],
     )
+
+
+@router.post("/{mmsi}/photo", response_model=VesselResponse)
+async def set_vessel_photo(
+    mmsi: int,
+    body: VesselPhotoUpdate,
+    session: AsyncSession = Depends(get_session),
+) -> VesselResponse:
+    repo = VesselRepository(session)
+    updated = await repo.update_photo(mmsi, body.photo_url)
+    if not updated:
+        raise ProblemDetail(
+            status_code=404,
+            title="Not Found",
+            detail=f"Vessel {mmsi} not found",
+        )
+    vessel = await repo.get_by_mmsi(mmsi)
+    return VesselResponse.model_validate(vessel)
+
+
+@router.get("/{mmsi}/eta", response_model=PredictedEtaResponse)
+async def get_vessel_eta(
+    mmsi: int,
+    session: AsyncSession = Depends(get_session),
+    redis: Redis = Depends(get_redis),  # type: ignore[type-arg]
+) -> PredictedEtaResponse:
+    vessel_repo = VesselRepository(session)
+    vessel = await vessel_repo.get_by_mmsi(mmsi)
+    if vessel is None:
+        raise ProblemDetail(
+            status_code=404,
+            title="Not Found",
+            detail=f"Vessel {mmsi} not found",
+        )
+    calculator = EtaCalculator(session, redis)
+    result = await calculator.calculate(mmsi)
+    return PredictedEtaResponse.model_validate(result)
 
 
 def _in_bbox(lon: float, lat: float, bbox: str) -> bool:

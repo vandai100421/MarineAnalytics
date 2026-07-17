@@ -10,8 +10,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_session
 from app.core.redis import get_redis
 from app.models.vessel import Vessel
+from app.repositories.port_repository import PortRepository
 from app.repositories.position_repository import PositionRepository
-from app.schemas.stats import ByTypeResponse, HeatmapResponse, OverviewResponse, TypeCount
+from app.repositories.stats_repository import StatsRepository
+from app.schemas.port import PortCongestionListResponse, PortCongestionResponse
+from app.schemas.stats import (
+    ByTypeResponse,
+    HeatmapResponse,
+    OverviewResponse,
+    TimeSeriesPoint,
+    TimeSeriesResponse,
+    TypeCount,
+)
 
 router = APIRouter(prefix="/api/v1/stats", tags=["stats"])
 
@@ -116,4 +126,46 @@ async def get_heatmap(
     return HeatmapResponse(
         points=[[lon, lat] for lat, lon in points],
         total=len(points),
+    )
+
+
+@router.get("/timeseries", response_model=TimeSeriesResponse)
+async def get_timeseries(
+    period: str = Query("24h", pattern="^(24h|7d|30d)$"),
+    session: AsyncSession = Depends(get_session),
+) -> TimeSeriesResponse:
+    repo = StatsRepository(session)
+    data = await repo.get_timeseries(period)
+    return TimeSeriesResponse(
+        period=period,
+        points=[
+            TimeSeriesPoint(
+                ts=row["ts"],
+                vessel_count=row["vessel_count"],
+                avg_sog=round(row["avg_sog"], 2),
+            )
+            for row in data
+        ],
+    )
+
+
+@router.get("/port-congestion", response_model=PortCongestionListResponse)
+async def get_port_congestion(
+    limit: int = Query(10, ge=1, le=50),
+    session: AsyncSession = Depends(get_session),
+) -> PortCongestionListResponse:
+    repo = PortRepository(session)
+    data = await repo.get_congestion_all(limit)
+    return PortCongestionListResponse(
+        ports=[
+            PortCongestionResponse(
+                port_id=d["port_id"],
+                name=d["name"],
+                country_code=d["country_code"],
+                vessel_count=d["vessel_count"],
+                avg_dwell_minutes=d["avg_dwell_minutes"],
+                anchorage_count=d["anchorage_count"],
+            )
+            for d in data
+        ]
     )
