@@ -58,3 +58,20 @@ class PredictedEtaResponse(BaseModel):
     eta_hours: float | None = None
     eta_time: datetime | None = None
     ais_eta: datetime | None = None
+
+
+class TradeFlowResponse(BaseModel):
+    origin_port_id: int
+    origin_name: str
+    origin_lat: float
+    origin_lon: float
+    dest_port_id: int
+    dest_name: str
+    dest_lat: float
+    dest_lon: float
+    vessel_count: int
+
+
+class TradeFlowListResponse(BaseModel):
+    flows: list[TradeFlowResponse]
+    total: int

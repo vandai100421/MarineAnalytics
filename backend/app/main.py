@@ -9,9 +9,11 @@ from app.api.aircraft import router as aircraft_router
 from app.api.alerts import router as alerts_router
 from app.api.exports import router as exports_router
 from app.api.geofences import router as geofences_router
+from app.api.idle_events import router as idle_events_router
 from app.api.monitoring import router as monitoring_router
 from app.api.ports import router as ports_router
 from app.api.stats import router as stats_router
+from app.api.trade_flows import router as trade_flows_router
 from app.api.vessels import router as vessels_router
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
@@ -88,6 +90,8 @@ def create_app() -> FastAPI:
     app.include_router(stats_router)
     app.include_router(exports_router)
     app.include_router(ports_router)
+    app.include_router(trade_flows_router)
+    app.include_router(idle_events_router)
     app.include_router(geofences_router)
     app.include_router(alerts_router)
     app.include_router(sse_router)

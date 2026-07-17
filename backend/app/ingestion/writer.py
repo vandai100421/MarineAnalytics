@@ -179,11 +179,13 @@ class BatchWriter:
             logger.debug("positions_batched", count=len(buffer))
 
             from app.alerts.geofence_engine import check_position_against_geofences
+            from app.alerts.idle_engine import check_position_for_idle
             from app.alerts.port_engine import check_position_against_ports
 
             for m in buffer:
                 await check_position_against_geofences(m)
                 await check_position_against_ports(m)
+                await check_position_for_idle(m)
         except Exception as exc:
             logger.error("position_batch_error", error=str(exc), count=len(buffer))
 

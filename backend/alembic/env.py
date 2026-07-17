@@ -11,6 +11,7 @@ from app.core.db import Base
 from app.models.aircraft import AircraftPosition  # noqa: F401
 from app.models.alert import Alert  # noqa: F401
 from app.models.geofence import Geofence  # noqa: F401
+from app.models.idle import IdleEvent  # noqa: F401
 from app.models.port import Port, PortArrival  # noqa: F401
 from app.models.position import PositionReport  # noqa: F401
 from app.models.vessel import Vessel  # noqa: F401
