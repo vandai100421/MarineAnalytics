@@ -7,12 +7,16 @@ import { useMapStore } from '../../store/mapStore'
 import { useVesselPositions, useVesselTrack, useVesselCluster } from '../../api/vessels'
 import { useAircraftPositions } from '../../api/aircraft'
 import { usePorts } from '../../api/ports'
+import { useTradeFlows } from '../../api/trade_flows'
+import { useIdleEvents } from '../../api/idle'
 import { useSSE } from '../../hooks/useSSE'
 import { useI18n } from '../../i18n/useI18n'
 import { createVesselLayer } from './VesselLayer'
 import { createHeatmapLayer } from './HeatmapLayer'
 import { createAircraftLayer } from './AircraftLayer'
 import { createPortLayer } from './PortLayer'
+import { createTradeFlowLayer } from './TradeFlowLayer'
+import { createIdleLayer } from './IdleLayer'
 import type { VesselPosition } from '../../types'
 
 const MAP_STYLE_URL = import.meta.env.VITE_MAP_STYLE_URL ?? '/styles/osm-style.json'
@@ -80,11 +84,14 @@ export function MapView() {
   )
   const { data: aircraftData } = useAircraftPositions(debouncedBbox)
   const { data: portData } = usePorts(debouncedBbox, layerToggles.ports || layerToggles.tradeflow)
+  const { data: tradeFlowData } = useTradeFlows(100)
 
   const bboxStr = useMemo(() => {
     if (!debouncedBbox) return null
     return `${debouncedBbox.minLon},${debouncedBbox.minLat},${debouncedBbox.maxLon},${debouncedBbox.maxLat}`
   }, [debouncedBbox])
+
+  const { data: idleData } = useIdleEvents(bboxStr, true, 200)
 
   // Only use SSE when zoomed in
   useSSE({
@@ -225,6 +232,14 @@ export function MapView() {
       )
     }
 
+    if (layerToggles.tradeflow && tradeFlowData && tradeFlowData.flows.length > 0) {
+      result.push(...createTradeFlowLayer({ data: tradeFlowData.flows }))
+    }
+
+    if (layerToggles.idle && idleData && idleData.events.length > 0) {
+      result.push(...createIdleLayer({ data: idleData.events, onSelect: setSelectedMmsi }))
+    }
+
     return result
   }, [
     allPositions,
@@ -242,6 +257,8 @@ export function MapView() {
     setSelectedHex,
     layerToggles,
     portData,
+    tradeFlowData,
+    idleData,
     selectedPortId,
     setSelectedPortId,
   ])

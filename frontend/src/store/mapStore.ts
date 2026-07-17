@@ -7,6 +7,7 @@ interface LayerToggles {
   ports: boolean
   tradeflow: boolean
   anchorage: boolean
+  idle: boolean
 }
 
 interface RightPanelSections {
@@ -53,7 +54,7 @@ export const useMapStore = create<MapState>((set) => ({
   selectedPortId: null,
   realtimePositions: new Map(),
   mapMode: 'vessels',
-  layerToggles: { ports: false, tradeflow: false, anchorage: false },
+  layerToggles: { ports: false, tradeflow: false, anchorage: false, idle: false },
   playbackIndex: 0,
   searchQuery: '',
   leftPanelOpen: true,

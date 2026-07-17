@@ -200,6 +200,48 @@ export interface PredictedEta {
   ais_eta: string | null
 }
 
+export interface TradeFlow {
+  origin_port_id: number
+  origin_name: string
+  origin_lat: number
+  origin_lon: number
+  dest_port_id: number
+  dest_name: string
+  dest_lat: number
+  dest_lon: number
+  vessel_count: number
+}
+
+export interface TradeFlowListResponse {
+  flows: TradeFlow[]
+  total: number
+}
+
+export interface IdleEvent {
+  id: number
+  mmsi: number
+  start_ts: string
+  end_ts: string | null
+  duration_minutes: number | null
+  start_lat: number
+  start_lon: number
+  end_lat: number | null
+  end_lon: number | null
+  avg_sog: number | null
+  max_sog: number | null
+}
+
+export interface IdleEventListResponse {
+  total: number
+  events: IdleEvent[]
+}
+
+export interface IdleSummary {
+  total_events: number
+  active_idle: number
+  avg_duration_minutes: number
+}
+
 export const SHIP_TYPE_OPTIONS = [
   { value: 30, label: 'Fishing' },
   { value: 31, label: 'Towing' },

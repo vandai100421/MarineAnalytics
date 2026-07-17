@@ -7,6 +7,7 @@ import { VesselInfo } from '../panel/VesselInfo'
 import { VoyageSection } from '../panel/VoyageSection'
 import { PortInfo } from '../panel/PortInfo'
 import { AircraftInfo } from '../panel/AircraftInfo'
+import { SpeedProfile } from '../panel/SpeedProfile'
 import { useAircraftPositions } from '../../api/aircraft'
 import { useVesselTrack } from '../../api/vessels'
 import { exportTrackCSV } from '../../api/exports'
@@ -113,6 +114,12 @@ function RightPanelComponent() {
                       onIndexChange={setPlaybackIndex}
                     />
                   </Suspense>
+                  <div className="rounded-lg border border-ocean-700/40 bg-ocean-900/40 p-2">
+                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-ocean-400">
+                      {t('section.speedProfile')}
+                    </p>
+                    <SpeedProfile mmsi={selectedMmsi} />
+                  </div>
                 </>
               ) : (
                 <p className="text-xs text-ocean-500">{t('vessel.noTrack')}</p>

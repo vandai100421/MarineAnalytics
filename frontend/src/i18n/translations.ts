@@ -24,6 +24,7 @@ export const translations = {
     'section.particulars': 'Thông số tàu',
     'section.voyageEta': 'Hành trình & ETA',
     'section.trackHistory': 'Lịch sử lộ trình',
+    'section.speedProfile': 'Biểu đồ tốc độ',
     'section.geofences': 'Vùng giới hạn',
     'section.recentAlerts': 'Cảnh báo gần đây',
     'section.overview': 'Tổng quan',
@@ -40,6 +41,7 @@ export const translations = {
     'layer.ports': 'Cảng biển',
     'layer.tradeFlow': 'Luồng thương mại',
     'layer.anchorage': 'Vùng đỗ tàu',
+    'layer.idle': 'Tàu dừng',
 
     'filter.minSpeed': 'Tốc độ tối thiểu',
     'filter.shipType': 'Loại tàu',
@@ -169,6 +171,7 @@ export const translations = {
     'section.particulars': 'Particulars',
     'section.voyageEta': 'Voyage & ETA',
     'section.trackHistory': 'Track History',
+    'section.speedProfile': 'Speed Profile',
     'section.geofences': 'Geofences',
     'section.recentAlerts': 'Recent Alerts',
     'section.overview': 'Overview',
@@ -185,6 +188,7 @@ export const translations = {
     'layer.ports': 'Ports',
     'layer.tradeFlow': 'Trade Flow',
     'layer.anchorage': 'Anchorage',
+    'layer.idle': 'Idle Vessels',
 
     'filter.minSpeed': 'Min Speed',
     'filter.shipType': 'Ship Type',
