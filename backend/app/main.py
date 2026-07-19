@@ -40,13 +40,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await redis.ping()
     logger.info("redis_connected", url=settings.redis_url)
 
-    from app.ingestion.adsbexchange_client import poll_adsbexchange
     from app.ingestion.aisstream_client import connect_aisstream
+    from app.ingestion.opensky_client import poll_opensky
 
     ingestion_task = asyncio.create_task(connect_aisstream())
     logger.info("ingestion_task_started")
 
-    adsb_task = asyncio.create_task(poll_adsbexchange())
+    adsb_task = asyncio.create_task(poll_opensky())
     logger.info("adsb_task_started")
 
     await subscriber_manager.start_broadcaster(interval=settings.sse_batch_interval_seconds)

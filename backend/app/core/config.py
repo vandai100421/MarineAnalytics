@@ -39,6 +39,14 @@ class Settings(BaseSettings):
 
     adsbexchange_api_key: str = Field(default="", alias="ADSBEXCHANGE_API_KEY")
 
+    opensky_enabled: bool = Field(default=False, alias="OPENSKY_ENABLED")
+    opensky_username: str = Field(default="", alias="OPENSKY_USERNAME")
+    opensky_password: str = Field(default="", alias="OPENSKY_PASSWORD")
+    opensky_poll_interval_seconds: float = Field(
+        default=60.0, alias="OPENSKY_POLL_INTERVAL_SECONDS"
+    )
+    opensky_bbox: str = Field(default="", alias="OPENSKY_BBOX")
+
     @property
     def bbox_list(self) -> list[list[float]] | None:
         if not self.aisstream_bbox.strip():
@@ -48,6 +56,17 @@ class Settings(BaseSettings):
             return None
         min_lon, min_lat, max_lon, max_lat = parts
         return [[min_lat, min_lon], [max_lat, max_lon]]
+
+    @property
+    def opensky_bbox_params(self) -> tuple[float, float, float, float] | None:
+        bbox = self.opensky_bbox.strip() or self.aisstream_bbox.strip()
+        if not bbox:
+            return None
+        parts = [float(x) for x in bbox.split(",")]
+        if len(parts) != 4:
+            return None
+        min_lon, min_lat, max_lon, max_lat = parts
+        return min_lat, min_lon, max_lat, max_lon
 
 
 @lru_cache
