@@ -13,7 +13,7 @@ export function useAircraftPositions(bbox: BoundingBox | null) {
     queryKey: ['aircraft-positions', query],
     queryFn: () =>
       apiFetch<AircraftPosition[]>(`/api/v1/aircraft/positions${query ? `?${query}` : ''}`),
-    refetchInterval: 10_000,
-    staleTime: 5_000,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
   })
 }
