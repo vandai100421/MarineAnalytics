@@ -28,15 +28,7 @@ function RightPanelComponent() {
   const { data: aircraftData } = useAircraftPositions(bbox)
   const t = useT()
 
-  if (selectedPortId !== null) {
-    return (
-      <div className="flex h-full flex-col overflow-y-auto">
-        <PortInfo portId={selectedPortId} />
-      </div>
-    )
-  }
-
-  if (selectedMmsi === null && selectedHex === null) {
+  if (selectedMmsi === null && selectedHex === null && selectedPortId === null) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-6 text-center">
         <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-ocean-800/50">
@@ -52,6 +44,10 @@ function RightPanelComponent() {
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
+      {selectedPortId !== null && (
+        <PortInfo portId={selectedPortId} />
+      )}
+
       {selectedMmsi !== null && (
         <>
           <VesselPhoto mmsi={selectedMmsi} />

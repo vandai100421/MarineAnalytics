@@ -13,7 +13,7 @@ import type {
 
 export function useVesselPositions(
   bbox: BoundingBox | null,
-  filters?: { minSog?: number; maxSog?: number; shipType?: number; name?: string; destination?: string },
+  filters?: { minSog?: number; maxSog?: number; shipTypes?: number[]; name?: string; destination?: string },
 ) {
   const params = new URLSearchParams()
   if (bbox) {
@@ -25,8 +25,8 @@ export function useVesselPositions(
   if (filters?.maxSog !== undefined) {
     params.set('max_sog', String(filters.maxSog))
   }
-  if (filters?.shipType !== undefined) {
-    params.set('ship_type', String(filters.shipType))
+  if (filters?.shipTypes && filters.shipTypes.length > 0) {
+    params.set('ship_types', filters.shipTypes.join(','))
   }
   if (filters?.name) {
     params.set('name', filters.name)
@@ -39,25 +39,50 @@ export function useVesselPositions(
   return useQuery<VesselPosition[]>({
     queryKey: ['vessel-positions', query],
     queryFn: () => apiFetch<VesselPosition[]>(`/api/v1/vessels/positions${query ? `?${query}` : ''}`),
-    refetchInterval: 15_000,
-    staleTime: 10_000,
+    refetchInterval: 30_000,
+    staleTime: 20_000,
   })
 }
 
-export function useVesselCluster(bbox: BoundingBox | null, zoom: number) {
+export function useVesselCluster(
+  bbox: BoundingBox | null,
+  zoom: number,
+  filters?: {
+    minSog?: number
+    maxSog?: number
+    shipTypes?: number[]
+    name?: string
+    destination?: string
+  },
+) {
   const precision = zoom < 4 ? 1 : zoom < 6 ? 2 : zoom < 8 ? 3 : 4
   const params = new URLSearchParams()
   if (bbox) {
     params.set('bbox', `${bbox.minLon},${bbox.minLat},${bbox.maxLon},${bbox.maxLat}`)
   }
   params.set('precision', String(precision))
+  if (filters?.minSog !== undefined && filters.minSog > 0) {
+    params.set('min_sog', String(filters.minSog))
+  }
+  if (filters?.maxSog !== undefined) {
+    params.set('max_sog', String(filters.maxSog))
+  }
+  if (filters?.shipTypes && filters.shipTypes.length > 0) {
+    params.set('ship_types', filters.shipTypes.join(','))
+  }
+  if (filters?.name) {
+    params.set('name', filters.name)
+  }
+  if (filters?.destination) {
+    params.set('destination', filters.destination)
+  }
   const query = params.toString()
 
   return useQuery<VesselPosition[]>({
     queryKey: ['vessel-cluster', query],
     queryFn: () => apiFetch<VesselPosition[]>(`/api/v1/vessels/cluster?${query}`),
-    refetchInterval: 30_000,
-    staleTime: 15_000,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
   })
 }
 

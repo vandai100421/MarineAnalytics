@@ -73,7 +73,7 @@ function FiltersComponent({ filters, onChange }: FiltersProps) {
             {t('filter.minSpeed')}
           </label>
           <span className="rounded-md bg-sea-500/20 px-2 py-0.5 text-[10px] font-mono font-semibold text-sea-300">
-            {filters.minSog ?? 0} kn
+            {filters.minSog !== undefined ? `${filters.minSog} kn` : 'Any'}
           </span>
         </div>
         <input
@@ -94,6 +94,36 @@ function FiltersComponent({ filters, onChange }: FiltersProps) {
           <span>0</span>
           <span>15</span>
           <span>30</span>
+        </div>
+      </div>
+
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-ocean-400">
+            Max Speed
+          </label>
+          <span className="rounded-md bg-sea-500/20 px-2 py-0.5 text-[10px] font-mono font-semibold text-sea-300">
+            {filters.maxSog !== undefined ? `${filters.maxSog} kn` : 'Any'}
+          </span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={60}
+          step={1}
+          value={filters.maxSog ?? 60}
+          onChange={(e) =>
+            onChange({
+              ...filters,
+              maxSog: Number(e.target.value) < 60 ? Number(e.target.value) : undefined,
+            })
+          }
+          className="w-full"
+        />
+        <div className="mt-1 flex justify-between text-[9px] text-ocean-500">
+          <span>0</span>
+          <span>30</span>
+          <span>60+</span>
         </div>
       </div>
 

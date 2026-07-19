@@ -10,7 +10,7 @@ export function AlertPanel() {
     queryFn: () => apiFetch<AlertsListResponse>('/api/v1/alerts?limit=20'),
     refetchInterval: 30_000,
   })
-  const { t, lang } = useI18n()
+  const { t } = useI18n()
 
   if (isLoading) {
     return (
@@ -87,7 +87,7 @@ export function AlertPanel() {
                 {alert.event_type === 'enter' ? t('alert.entered') : t('alert.exited')}
               </span>
               <span className="font-mono text-[10px] text-ocean-500">
-                {new Date(alert.ts).toLocaleTimeString(lang === 'vi' ? 'vi-VN' : 'en-GB', { hour: '2-digit', minute: '2-digit' })}
+                {new Date(alert.ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
             <div className="mt-1 text-xs text-ocean-300">

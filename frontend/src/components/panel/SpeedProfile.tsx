@@ -9,7 +9,7 @@ interface SpeedProfileProps {
 
 function SpeedProfileComponent({ mmsi }: SpeedProfileProps) {
   const { data: trackData, isLoading } = useVesselTrack(mmsi)
-  const { t, lang } = useI18n()
+  const { t } = useI18n()
 
   const chartData = useMemo(() => {
     if (!trackData || trackData.points.length === 0) return []
@@ -17,13 +17,13 @@ function SpeedProfileComponent({ mmsi }: SpeedProfileProps) {
     return trackData.points
       .filter((_, i) => i % step === 0)
       .map((p) => ({
-        ts: new Date(p.ts).toLocaleTimeString(lang === 'vi' ? 'vi-VN' : 'en-GB', {
+        ts: new Date(p.ts).toLocaleTimeString('en-GB', {
           hour: '2-digit',
           minute: '2-digit',
         }),
         sog: p.sog ?? 0,
       }))
-  }, [trackData, lang])
+  }, [trackData])
 
   if (isLoading || !trackData || trackData.points.length === 0) {
     return <p className="py-3 text-center text-xs text-ocean-500">{t('vessel.noTrack')}</p>

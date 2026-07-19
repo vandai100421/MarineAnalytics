@@ -33,7 +33,7 @@ export function Charts() {
   const [period, setPeriod] = useState<'24h' | '7d' | '30d'>('24h')
   const { data: byTypeData, isLoading: typeLoading } = useStatsByType()
   const { data: tsData, isLoading: tsLoading } = useStatsTimeseries(period)
-  const { t, lang } = useI18n()
+  const { t } = useI18n()
 
   return (
     <div className="rounded-xl border border-ocean-700/40 bg-ocean-900/40 p-3">
@@ -147,7 +147,7 @@ export function Charts() {
             <ResponsiveContainer width="100%" height={200}>
               <LineChart
                 data={tsData.points.map((p) => ({
-                  ts: new Date(p.ts).toLocaleTimeString(lang === 'vi' ? 'vi-VN' : 'en-GB', {
+                  ts: new Date(p.ts).toLocaleTimeString('en-GB', {
                     hour: '2-digit',
                     minute: '2-digit',
                   }),

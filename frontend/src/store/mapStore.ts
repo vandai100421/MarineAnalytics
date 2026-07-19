@@ -39,6 +39,7 @@ interface MapState {
   setSelectedHex: (hex: string | null) => void
   setSelectedPortId: (portId: number | null) => void
   setSelectedFleetId: (fleetId: number | null) => void
+  clearSelection: () => void
   updatePositions: (positions: VesselPosition[]) => void
   setMapMode: (mode: MapMode) => void
   setLayerToggle: (key: keyof LayerToggles, value: boolean) => void
@@ -71,17 +72,40 @@ export const useMapStore = create<MapState>((set) => ({
   },
   setBbox: (bbox) => set({ bbox }),
   setFilters: (filters) => set({ filters }),
-  setSelectedMmsi: (mmsi: number | null) => set({ selectedMmsi: mmsi }),
-  setSelectedHex: (hex: string | null) => set({ selectedHex: hex }),
-  setSelectedPortId: (portId: number | null) => set({ selectedPortId: portId }),
-  setSelectedFleetId: (fleetId: number | null) => set({ selectedFleetId: fleetId }),
+  setSelectedMmsi: (mmsi) =>
+    set({
+      selectedMmsi: mmsi,
+      selectedHex: null,
+      selectedPortId: null,
+    }),
+  setSelectedHex: (hex) =>
+    set({
+      selectedHex: hex,
+      selectedMmsi: null,
+      selectedPortId: null,
+    }),
+  setSelectedPortId: (portId) =>
+    set({
+      selectedPortId: portId,
+      selectedMmsi: null,
+      selectedHex: null,
+    }),
+  setSelectedFleetId: (fleetId) => set({ selectedFleetId: fleetId }),
+  clearSelection: () =>
+    set({ selectedMmsi: null, selectedHex: null, selectedPortId: null }),
   updatePositions: (positions) =>
     set((state) => {
+      if (positions.length === 0) return state
       const next = new Map(state.realtimePositions)
+      let changed = false
       for (const p of positions) {
-        next.set(p.mmsi, p)
+        const existing = next.get(p.mmsi)
+        if (!existing || existing.ts !== p.ts) {
+          next.set(p.mmsi, p)
+          changed = true
+        }
       }
-      return { realtimePositions: next }
+      return changed ? { realtimePositions: next } : state
     }),
   setMapMode: (mapMode) => set({ mapMode }),
   setLayerToggle: (key, value) =>

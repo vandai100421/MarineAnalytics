@@ -78,6 +78,43 @@ body {
   backdrop-filter: blur(8px);
 }
 
+/* MarineTraffic-style popup */
+.marine-popup {
+  z-index: 9999 !important;
+}
+
+.marine-popup .maplibregl-popup-content {
+  background: rgba(10, 15, 29, 0.82) !important;
+  border: 1px solid #3d4e6b !important;
+  border-radius: 10px !important;
+  padding: 0 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #e2e8f0 !important;
+  overflow: hidden;
+}
+
+.marine-popup .maplibregl-popup-tip {
+  border-top-color: rgba(10, 15, 29, 0.82) !important;
+  border-bottom-color: rgba(10, 15, 29, 0.82) !important;
+  background: rgba(10, 15, 29, 0.82) !important;
+}
+
+.marine-popup .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: rgba(10, 15, 29, 0.82) !important;
+}
+
+/* Ensure maplibre popups always render above deck.gl canvas */
+.maplibregl-popup {
+  z-index: 9999 !important;
+}
+
+/* Lower deck.gl canvas z-index so popups appear above */
+.deckgl-overlay canvas {
+  z-index: 1 !important;
+}
+
 /* Range slider styling */
 input[type='range'] {
   -webkit-appearance: none;

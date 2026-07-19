@@ -6,10 +6,8 @@ import { useI18n } from '../../i18n/useI18n'
 function TopNavBarComponent() {
   const leftPanelOpen = useMapStore((s) => s.leftPanelOpen)
   const setLeftPanelOpen = useMapStore((s) => s.setLeftPanelOpen)
-  const rightPanelOpen = useMapStore((s) => s.rightPanelOpen)
-  const setRightPanelOpen = useMapStore((s) => s.setRightPanelOpen)
   const { data: stats } = useStatsOverview()
-  const { t, lang, toggleLang } = useI18n()
+  const { t } = useI18n()
 
   return (
     <header className="glass-dark absolute left-0 right-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-ocean-700/50 px-4">
@@ -45,18 +43,6 @@ function TopNavBarComponent() {
       <div className="flex-1" />
 
       <button
-        onClick={toggleLang}
-        className="flex items-center gap-1 rounded-lg border border-ocean-700/50 bg-ocean-900/50 px-2.5 py-1.5 text-xs font-semibold text-ocean-200 transition-colors hover:bg-ocean-800/50"
-        title={lang === 'vi' ? 'Switch to English' : 'Chuyển sang Tiếng Việt'}
-      >
-        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20" strokeLinecap="round" />
-        </svg>
-        {lang === 'vi' ? 'VI' : 'EN'}
-      </button>
-
-      <button
         onClick={() => setLeftPanelOpen(!leftPanelOpen)}
         className={`rounded-lg p-2 transition-colors ${
           leftPanelOpen
@@ -67,23 +53,6 @@ function TopNavBarComponent() {
       >
         <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
-        </svg>
-      </button>
-      <button
-        onClick={() => setRightPanelOpen(!rightPanelOpen)}
-        className={`rounded-lg p-2 transition-colors ${
-          rightPanelOpen
-            ? 'bg-sea-500/20 text-sea-300'
-            : 'text-ocean-300 hover:bg-ocean-700/50 hover:text-white'
-        }`}
-        title={t('panel.toggleDetails')}
-      >
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          {rightPanelOpen ? (
-            <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-          ) : (
-            <path d="M15 5l-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
-          )}
         </svg>
       </button>
     </header>
@@ -100,3 +69,4 @@ function Stat({ label, value, color }: { label: string; value: string; color: st
 }
 
 export const TopNavBar = memo(TopNavBarComponent)
+
