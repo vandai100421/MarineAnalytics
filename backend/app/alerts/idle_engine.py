@@ -65,7 +65,7 @@ async def check_position_for_idle(msg: DecodedMessage) -> None:
                         if not already:
                             await repo.start_event(mmsi, lat, lon)
                             state["db_recorded"] = True
-                            logger.info(
+                            logger.debug(
                                 "idle_event_started",
                                 mmsi=mmsi,
                                 lat=lat,
@@ -85,7 +85,7 @@ async def check_position_for_idle(msg: DecodedMessage) -> None:
                     repo = IdleRepository(session)
                     ended = await repo.end_event(mmsi, lat, lon, avg_sog, max_sog)
                     if ended:
-                        logger.info(
+                        logger.debug(
                             "idle_event_ended",
                             mmsi=mmsi,
                             end_lat=lat,

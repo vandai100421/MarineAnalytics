@@ -59,7 +59,10 @@ async def list_vessels(
 @router.get("/positions", response_model=list[VesselPositionResponse])
 async def get_positions(
     bbox: str | None = Query(None, description="min_lon,min_lat,max_lon,max_lat"),
-    ship_type: int | None = Query(None, description="Filter by AIS ship type code"),
+    ship_type: int | None = Query(None, description="Filter by AIS ship type code (single)"),
+    ship_types: str | None = Query(
+        None, description="Filter by AIS ship type codes (comma-separated, e.g. 70,80)"
+    ),
     min_sog: float | None = Query(None, description="Minimum speed over ground"),
     max_sog: float | None = Query(None, description="Maximum speed over ground"),
     name: str | None = Query(None, description="Filter by vessel name (substring)"),
@@ -82,6 +85,16 @@ async def get_positions(
     name_lower = name.lower() if name else None
     dest_lower = destination.lower() if destination else None
     vessel_cache: dict[int, Vessel | None] = {}
+
+    ship_type_set: set[int] | None = None
+    if ship_types:
+        try:
+            base_codes = {int(x.strip()) for x in ship_types.split(",") if x.strip()}
+            ship_type_set = _expand_ship_type_codes(base_codes)
+        except ValueError:
+            ship_type_set = None
+    elif ship_type is not None:
+        ship_type_set = _expand_ship_type_codes({ship_type})
 
     positions: list[VesselPositionResponse] = []
     for data in results:
@@ -106,14 +119,14 @@ async def get_positions(
         if max_sog is not None and sog > max_sog:
             continue
 
-        if ship_type is not None or name_lower or dest_lower:
+        if ship_type_set is not None or name_lower or dest_lower:
             if mmsi not in vessel_cache:
                 vessel_repo = VesselRepository(session)
                 vessel_cache[mmsi] = await vessel_repo.get_by_mmsi(mmsi)
             vessel = vessel_cache[mmsi]
             if vessel is None:
                 continue
-            if ship_type is not None and vessel.ship_type != ship_type:
+            if ship_type_set is not None and vessel.ship_type not in ship_type_set:
                 continue
             if name_lower and (vessel.name is None or name_lower not in vessel.name.lower()):
                 continue
@@ -143,7 +156,16 @@ async def get_cluster_positions(
     precision: int = Query(
         2, ge=1, le=6, description="Grid precision (1=10deg, 2=1deg, 3=0.1deg)"
     ),
+    ship_type: int | None = Query(None, description="Filter by AIS ship type code (single)"),
+    ship_types: str | None = Query(
+        None, description="Filter by AIS ship type codes (comma-separated, e.g. 70,80)"
+    ),
+    min_sog: float | None = Query(None, description="Minimum speed over ground"),
+    max_sog: float | None = Query(None, description="Maximum speed over ground"),
+    name: str | None = Query(None, description="Filter by vessel name (substring)"),
+    destination: str | None = Query(None, description="Filter by destination (substring)"),
     redis: Redis = Depends(get_redis),  # type: ignore[type-arg]
+    session: AsyncSession = Depends(get_session),
 ) -> list[VesselPositionResponse]:
     import math
 
@@ -168,6 +190,24 @@ async def get_cluster_positions(
         pipe.hgetall(key)
     results = await pipe.execute()
 
+    ship_type_set: set[int] | None = None
+    if ship_types:
+        try:
+            base_codes = {int(x.strip()) for x in ship_types.split(",") if x.strip()}
+            ship_type_set = _expand_ship_type_codes(base_codes)
+        except ValueError:
+            ship_type_set = None
+    elif ship_type is not None:
+        ship_type_set = _expand_ship_type_codes({ship_type})
+
+    name_lower = name.lower() if name else None
+    dest_lower = destination.lower() if destination else None
+    vessel_cache: dict[int, Vessel | None] = {}
+
+    needs_vessel_filter = (
+        ship_type_set is not None or name_lower is not None or dest_lower is not None
+    )
+
     grid_size = math.pow(10, 1 - precision)
     grid: dict[tuple[float, float], dict[str, object]] = {}
 
@@ -181,6 +221,32 @@ async def get_cluster_positions(
         if parsed_bbox is not None:
             min_lon, min_lat, max_lon, max_lat = parsed_bbox
             if not (min_lon <= lon <= max_lon and min_lat <= lat <= max_lat):
+                continue
+
+        mmsi = _to_int(data.get("mmsi"))
+        if mmsi is None:
+            continue
+
+        sog = _to_float(data.get("sog")) or 0.0
+        if min_sog is not None and sog < min_sog:
+            continue
+        if max_sog is not None and sog > max_sog:
+            continue
+
+        if needs_vessel_filter:
+            if mmsi not in vessel_cache:
+                vessel_repo = VesselRepository(session)
+                vessel_cache[mmsi] = await vessel_repo.get_by_mmsi(mmsi)
+            vessel = vessel_cache[mmsi]
+            if vessel is None:
+                continue
+            if ship_type_set is not None and vessel.ship_type not in ship_type_set:
+                continue
+            if name_lower and (vessel.name is None or name_lower not in vessel.name.lower()):
+                continue
+            if dest_lower and (
+                vessel.destination is None or dest_lower not in vessel.destination.lower()
+            ):
                 continue
 
         grid_lat = round(lat / grid_size) * grid_size
@@ -357,3 +423,25 @@ def _to_int(value: str | None) -> int | None:
         return int(value)
     except (ValueError, TypeError):
         return None
+
+
+_SHIP_TYPE_RANGES = {
+    20: range(20, 30),
+    30: range(30, 40),
+    40: range(40, 50),
+    50: range(50, 60),
+    60: range(60, 70),
+    70: range(70, 80),
+    80: range(80, 90),
+    90: range(90, 100),
+}
+
+
+def _expand_ship_type_codes(codes: set[int]) -> set[int]:
+    expanded: set[int] = set()
+    for code in codes:
+        if code in _SHIP_TYPE_RANGES:
+            expanded.update(_SHIP_TYPE_RANGES[code])
+        else:
+            expanded.add(code)
+    return expanded

@@ -21,7 +21,11 @@ class VesselRepository:
     ) -> list[Vessel]:
         stmt = select(Vessel).offset(offset).limit(limit)
         if ship_type is not None:
-            stmt = stmt.where(Vessel.ship_type == ship_type)
+            base = (ship_type // 10) * 10
+            stmt = stmt.where(
+                Vessel.ship_type >= base,
+                Vessel.ship_type < base + 10,
+            )
         stmt = stmt.order_by(Vessel.updated_at.desc())
         result = await self._session.execute(stmt)
         return list(result.scalars().all())
@@ -29,7 +33,11 @@ class VesselRepository:
     async def count(self, ship_type: int | None = None) -> int:
         stmt = select(func.count()).select_from(Vessel)
         if ship_type is not None:
-            stmt = stmt.where(Vessel.ship_type == ship_type)
+            base = (ship_type // 10) * 10
+            stmt = stmt.where(
+                Vessel.ship_type >= base,
+                Vessel.ship_type < base + 10,
+            )
         result = await self._session.execute(stmt)
         return result.scalar_one()
 
@@ -76,8 +84,15 @@ class VesselRepository:
         stmt = select(Vessel)
         count_stmt = select(func.count()).select_from(Vessel)
         if ship_type is not None:
-            stmt = stmt.where(Vessel.ship_type == ship_type)
-            count_stmt = count_stmt.where(Vessel.ship_type == ship_type)
+            base = (ship_type // 10) * 10
+            stmt = stmt.where(
+                Vessel.ship_type >= base,
+                Vessel.ship_type < base + 10,
+            )
+            count_stmt = count_stmt.where(
+                Vessel.ship_type >= base,
+                Vessel.ship_type < base + 10,
+            )
         if name:
             stmt = stmt.where(Vessel.name.ilike(f"%{name}%"))
             count_stmt = count_stmt.where(Vessel.name.ilike(f"%{name}%"))

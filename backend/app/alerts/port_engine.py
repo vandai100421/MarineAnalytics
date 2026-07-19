@@ -92,7 +92,7 @@ async def check_position_against_ports(msg: DecodedMessage) -> None:
                             )
                             _vessel_port_state[mmsi] = (port.id, now)
                             _arrival_debounce[mmsi] = now
-                            logger.info(
+                            logger.debug(
                                 "port_arrival_detected",
                                 mmsi=mmsi,
                                 port_id=port.id,
@@ -106,7 +106,7 @@ async def check_position_against_ports(msg: DecodedMessage) -> None:
                     ended = await repo.end_arrival(mmsi, port_id)
                     if ended:
                         del _vessel_port_state[mmsi]
-                        logger.info(
+                        logger.debug(
                             "port_departure_detected",
                             mmsi=mmsi,
                             port_id=port_id,
