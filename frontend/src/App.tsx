@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect } from 'react'
 import { MapView } from './components/map/MapView'
 import { TopNavBar } from './components/layout/TopNavBar'
 import { LeftPanel } from './components/layout/LeftPanel'
-import { RightPanel } from './components/layout/RightPanel'
 import { useMapStore } from './store/mapStore'
 import { useT } from './i18n/useI18n'
 
@@ -14,18 +13,18 @@ const AlertPanel = lazy(() =>
 )
 
 export default function App() {
-  const selectedMmsi = useMapStore((state) => state.selectedMmsi)
-  const selectedPortId = useMapStore((state) => state.selectedPortId)
   const leftPanelOpen = useMapStore((state) => state.leftPanelOpen)
-  const rightPanelOpen = useMapStore((state) => state.rightPanelOpen)
   const setRightPanelOpen = useMapStore((state) => state.setRightPanelOpen)
+  const selectedMmsi = useMapStore((state) => state.selectedMmsi)
+  const selectedHex = useMapStore((state) => state.selectedHex)
+  const selectedPortId = useMapStore((state) => state.selectedPortId)
   const t = useT()
 
+  const hasSelection = selectedMmsi !== null || selectedHex !== null || selectedPortId !== null
+
   useEffect(() => {
-    if (selectedMmsi !== null || selectedPortId !== null) {
-      setRightPanelOpen(true)
-    }
-  }, [selectedMmsi, selectedPortId, setRightPanelOpen])
+    setRightPanelOpen(hasSelection)
+  }, [hasSelection, setRightPanelOpen])
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-ocean-950">
@@ -37,7 +36,7 @@ export default function App() {
         }`}
         style={{ flexShrink: 0 }}
       >
-        <div className="flex h-[calc(100vh-3.5rem)] flex-col">
+        <div className="min-h-0 flex-1">
           <LeftPanel />
           <div className="border-t border-ocean-700/40 p-3">
             <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-ocean-400">
@@ -64,17 +63,6 @@ export default function App() {
           <MapView />
         </div>
       </main>
-
-      <aside
-        className={`glass-dark relative z-20 mt-14 flex flex-col border-l border-ocean-700/50 transition-transform duration-300 ease-out ${
-          rightPanelOpen ? 'w-96 translate-x-0' : 'w-96 translate-x-full'
-        }`}
-        style={{ flexShrink: 0 }}
-      >
-        <div className="flex h-[calc(100vh-3.5rem)] flex-col">
-          <RightPanel />
-        </div>
-      </aside>
     </div>
   )
 }

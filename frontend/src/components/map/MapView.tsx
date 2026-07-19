@@ -1,5 +1,5 @@
-import { useMemo, useState, useEffect, useRef } from 'react'
-import MapGL from 'react-map-gl/maplibre'
+import { useMemo, useRef } from 'react'
+import MapGL, { type MapRef } from 'react-map-gl/maplibre'
 import { DeckGL } from 'deck.gl'
 import type { Layer } from '@deck.gl/core'
 import { PathLayer, TextLayer, ScatterplotLayer } from '@deck.gl/layers'
@@ -11,6 +11,7 @@ import { useTradeFlows } from '../../api/trade_flows'
 import { useIdleEvents } from '../../api/idle'
 import { useFleets, useAllFleetMembers } from '../../api/fleets'
 import { useSSE } from '../../hooks/useSSE'
+import { useMapViewport } from '../../hooks/useMapViewport'
 import { useI18n } from '../../i18n/useI18n'
 import { createVesselLayer } from './VesselLayer'
 import { createHeatmapLayer } from './HeatmapLayer'
@@ -19,6 +20,7 @@ import { createPortLayer } from './PortLayer'
 import { createTradeFlowLayer } from './TradeFlowLayer'
 import { createIdleLayer } from './IdleLayer'
 import { createFleetLayer } from './FleetLayer'
+import { MapPopup } from './MapPopup'
 import { hexToRgb } from '../../utils/colors'
 import type { VesselPosition } from '../../types'
 
@@ -35,7 +37,6 @@ const INITIAL_VIEW_STATE = {
 const DETAIL_ZOOM_THRESHOLD = 8
 
 export function MapView() {
-  const bbox = useMapStore((state) => state.bbox)
   const filters = useMapStore((state) => state.filters)
   const selectedMmsi = useMapStore((state) => state.selectedMmsi)
   const setSelectedMmsi = useMapStore((state) => state.setSelectedMmsi)
@@ -48,59 +49,59 @@ export function MapView() {
   const updatePositions = useMapStore((state) => state.updatePositions)
   const mapMode = useMapStore((state) => state.mapMode)
   const playbackIndex = useMapStore((state) => state.playbackIndex)
+  const clearSelection = useMapStore((state) => state.clearSelection)
+  const suppressClearRef = useRef(false)
   const { t } = useI18n()
-  const [zoom, setZoom] = useState(INITIAL_VIEW_STATE.zoom)
-  const [viewState, setViewState] = useState({
-    longitude: INITIAL_VIEW_STATE.longitude,
-    latitude: INITIAL_VIEW_STATE.latitude,
-    zoom: INITIAL_VIEW_STATE.zoom,
-  })
 
-  // Debounce bbox changes (500ms) to avoid API spam on pan/zoom
-  const [debouncedBbox, setDebouncedBbox] = useState(bbox)
-  const bboxTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => {
-    if (bboxTimerRef.current) clearTimeout(bboxTimerRef.current)
-    bboxTimerRef.current = setTimeout(() => setDebouncedBbox(bbox), 500)
-    return () => {
-      if (bboxTimerRef.current) clearTimeout(bboxTimerRef.current)
-    }
-  }, [bbox])
+  const {
+    zoom,
+    viewState,
+    debouncedBbox,
+    sseBboxStr,
+    restBboxStr,
+    setViewState,
+    onMapMove,
+  } = useMapViewport()
 
+  const mapRef = useRef<MapRef | null>(null)
   const isDetailZoom = zoom >= DETAIL_ZOOM_THRESHOLD
 
-  // Only fetch individual positions when zoomed in
   const { data: restPositions } = useVesselPositions(
     isDetailZoom ? debouncedBbox : null,
     {
       minSog: filters.minSog,
       maxSog: filters.maxSog,
-      shipType: filters.shipTypes?.[0],
+      shipTypes: filters.shipTypes,
       name: filters.name,
       destination: filters.destination,
     },
   )
-  // Fetch cluster data when zoomed out
   const { data: clusterData } = useVesselCluster(
     !isDetailZoom ? debouncedBbox : null,
     zoom,
+    {
+      minSog: filters.minSog,
+      maxSog: filters.maxSog,
+      shipTypes: filters.shipTypes,
+      name: filters.name,
+      destination: filters.destination,
+    },
   )
   const { data: aircraftData } = useAircraftPositions(debouncedBbox)
   const { data: portData } = usePorts(debouncedBbox, layerToggles.ports || layerToggles.tradeflow)
   const { data: tradeFlowData } = useTradeFlows(100)
 
-  const bboxStr = useMemo(() => {
-    if (!debouncedBbox) return null
-    return `${debouncedBbox.minLon},${debouncedBbox.minLat},${debouncedBbox.maxLon},${debouncedBbox.maxLat}`
-  }, [debouncedBbox])
-
-  const { data: idleData } = useIdleEvents(bboxStr, true, 200)
+  const { data: idleData } = useIdleEvents(restBboxStr, true, 200)
   const { data: fleetsData } = useFleets()
   const { data: allFleetMembers } = useAllFleetMembers()
 
-  // Only use SSE when zoomed in
+  const hasVesselFilter =
+    (filters.shipTypes && filters.shipTypes.length > 0) ||
+    !!filters.name ||
+    !!filters.destination
+
   useSSE({
-    bbox: isDetailZoom ? bboxStr : null,
+    bbox: isDetailZoom && !hasVesselFilter ? sseBboxStr : null,
     minSog: filters.minSog,
     onPositions: updatePositions,
   })
@@ -113,11 +114,13 @@ export function MapView() {
     for (const p of restPositions ?? []) {
       merged.set(p.mmsi, p)
     }
-    for (const p of realtimePositions.values()) {
-      merged.set(p.mmsi, p)
+    if (!hasVesselFilter) {
+      for (const p of realtimePositions.values()) {
+        merged.set(p.mmsi, p)
+      }
     }
     return Array.from(merged.values())
-  }, [restPositions, realtimePositions, isDetailZoom])
+  }, [restPositions, realtimePositions, isDetailZoom, hasVesselFilter])
 
   const heatmapData = useMemo(() => {
     return allPositions.map((p) => [p.lon, p.lat] as [number, number])
@@ -181,12 +184,11 @@ export function MapView() {
             onClick: (info: any) => {
               if (info.coordinate && info.coordinate.length >= 2) {
                 const [lon, lat] = info.coordinate
-                setViewState((prev) => ({
-                  ...prev,
+                setViewState({
                   longitude: lon,
                   latitude: lat,
-                  zoom: Math.min(prev.zoom + 2, DETAIL_ZOOM_THRESHOLD + 1),
-                }))
+                  zoom: Math.min(viewState.zoom + 2, DETAIL_ZOOM_THRESHOLD + 1),
+                })
               }
             },
           }),
@@ -300,23 +302,32 @@ export function MapView() {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onViewStateChange={(evt: any) => {
           const { longitude, latitude, zoom: newZoom } = evt.viewState
-          setZoom(newZoom)
           setViewState({ longitude, latitude, zoom: newZoom })
-          const span = 360 / Math.pow(2, newZoom)
-          const halfSpan = span / 2
-          useMapStore.getState().setBbox({
-            minLon: longitude - halfSpan,
-            minLat: Math.max(-90, latitude - halfSpan),
-            maxLon: longitude + halfSpan,
-            maxLat: Math.min(90, latitude + halfSpan),
-          })
+          onMapMove(mapRef.current)
+        }}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onClick={(info: any) => {
+          if (suppressClearRef.current) {
+            suppressClearRef.current = false
+            return
+          }
+          if (!info.object) {
+            clearSelection()
+          }
         }}
       >
         <MapGL
+          ref={mapRef}
           mapStyle={MAP_STYLE_URL}
           style={{ width: '100%', height: '100%' }}
         />
       </DeckGL>
+
+      <MapPopup
+        onClose={clearSelection}
+        suppressClearRef={suppressClearRef}
+        mapRef={mapRef}
+      />
 
       {/* Zoom indicator - bottom right */}
       <div className="glass absolute bottom-6 right-6 z-10 rounded-lg px-3 py-1.5 text-xs font-mono text-ocean-300">
