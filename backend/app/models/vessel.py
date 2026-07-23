@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, SmallInteger, Text, func
+from sqlalchemy import BigInteger, Float, Integer, SmallInteger, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db import Base
@@ -22,4 +22,12 @@ class Vessel(Base):
     destination: Mapped[str | None] = mapped_column(Text)
     eta: Mapped[datetime | None]
     photo_url: Mapped[str | None] = mapped_column(Text)
+    gt: Mapped[int | None] = mapped_column(Integer)
+    dwt: Mapped[int | None] = mapped_column(Integer)
+    loa: Mapped[float | None] = mapped_column(Float)
+    beam: Mapped[float | None] = mapped_column(Float)
+    draught_max: Mapped[float | None] = mapped_column(Float)
+    year_built: Mapped[int | None] = mapped_column(SmallInteger)
+    flag: Mapped[str | None] = mapped_column(Text)
+    ais_class: Mapped[str | None] = mapped_column(Text)
     updated_at: Mapped[datetime] = mapped_column(server_default=func.now(), onupdate=func.now())

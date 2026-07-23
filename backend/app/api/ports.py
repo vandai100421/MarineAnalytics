@@ -164,3 +164,108 @@ async def get_port_vessels(
             except (ValueError, TypeError):
                 continue
     return result
+
+
+@router.get("/{port_id}/expected-arrivals")
+async def get_port_expected_arrivals(
+    port_id: int,
+    hours: int = Query(24, ge=1, le=168),
+    limit: int = Query(50, ge=1, le=200),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, object]:
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import select
+
+    from app.models.vessel import Vessel
+
+    repo = PortRepository(session)
+    port = await repo.get_by_id(port_id)
+    if port is None:
+        raise ProblemDetail(
+            status_code=404,
+            title="Not Found",
+            detail=f"Port {port_id} not found",
+        )
+
+    now = datetime.now(UTC)
+    horizon = now + timedelta(hours=hours)
+
+    stmt = (
+        select(Vessel)
+        .where(Vessel.eta.isnot(None))
+        .where(Vessel.eta >= now)
+        .where(Vessel.eta <= horizon)
+        .where(Vessel.destination.ilike(f"%{port.name}%"))
+        .limit(limit)
+    )
+    result = await session.execute(stmt)
+    vessels = result.scalars().all()
+
+    return {
+        "total": len(vessels),
+        "port_name": port.name,
+        "horizon_hours": hours,
+        "vessels": [
+            {
+                "mmsi": v.mmsi,
+                "name": v.name,
+                "destination": v.destination,
+                "eta": v.eta.isoformat() if v.eta else None,
+                "ship_type_name": v.ship_type_name,
+            }
+            for v in vessels
+        ],
+    }
+
+
+@router.get("/{port_id}/recent-departures")
+async def get_port_recent_departures(
+    port_id: int,
+    hours: int = Query(24, ge=1, le=168),
+    limit: int = Query(50, ge=1, le=200),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, object]:
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import select
+
+    from app.models.port import PortArrival
+
+    repo = PortRepository(session)
+    port = await repo.get_by_id(port_id)
+    if port is None:
+        raise ProblemDetail(
+            status_code=404,
+            title="Not Found",
+            detail=f"Port {port_id} not found",
+        )
+
+    since = datetime.now(UTC) - timedelta(hours=hours)
+    stmt = (
+        select(PortArrival)
+        .where(PortArrival.port_id == port_id)
+        .where(PortArrival.departed_at.isnot(None))
+        .where(PortArrival.departed_at >= since)
+        .order_by(PortArrival.departed_at.desc())
+        .limit(limit)
+    )
+    result = await session.execute(stmt)
+    departures = result.scalars().all()
+
+    return {
+        "total": len(departures),
+        "port_name": port.name,
+        "horizon_hours": hours,
+        "departures": [
+            {
+                "id": d.id,
+                "mmsi": d.mmsi,
+                "arrived_at": d.arrived_at.isoformat() if d.arrived_at else None,
+                "departed_at": d.departed_at.isoformat() if d.departed_at else None,
+                "dwell_minutes": d.dwell_minutes,
+                "anchorage": d.anchorage,
+            }
+            for d in departures
+        ],
+    }

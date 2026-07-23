@@ -42,6 +42,8 @@ async def write_aircraft_positions(aircraft_list: list[dict[str, Any]]) -> None:
                 "flight": _clean_str(ac.get("flight")),
                 "reg": ac.get("reg"),
                 "type": ac.get("type"),
+                "vertical_rate": _to_float(ac.get("vertical_rate")),
+                "origin_country": ac.get("origin_country"),
             }
         )
 
@@ -81,6 +83,10 @@ async def _cache_aircraft_positions(rows: list[dict[str, Any]]) -> None:
             mapping["reg"] = str(row["reg"])
         if row["type"]:
             mapping["type"] = str(row["type"])
+        if row.get("vertical_rate") is not None:
+            mapping["vertical_rate"] = str(row["vertical_rate"])
+        if row.get("origin_country"):
+            mapping["origin_country"] = str(row["origin_country"])
 
         await redis.hset(key, mapping=mapping)  # type: ignore[arg-type]
         await redis.expire(key, REDIS_AIR_TTL)

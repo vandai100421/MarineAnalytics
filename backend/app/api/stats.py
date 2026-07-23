@@ -4,7 +4,7 @@ import time
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
@@ -66,14 +66,21 @@ async def get_overview(
 
     avg_sog = sum(speeds) / len(speeds) if speeds else 0.0
 
-    stmt = select(func.count()).select_from(Vessel)
+    stmt = select(func.count()).select_from(Vessel).where(
+        Vessel.updated_at > func.now() - text("interval '24 hours'")
+    )
     result = await session.execute(stmt)
     total_vessels = result.scalar_one()
+
+    stmt_all = select(func.count()).select_from(Vessel)
+    result_all = await session.execute(stmt_all)
+    db_total = result_all.scalar_one()
 
     response = OverviewResponse(
         active_vessels=active_count,
         total_vessels=total_vessels,
         avg_sog=round(avg_sog, 2),
+        db_total=db_total,
     )
     _overview_cache = response
     _overview_cache_time = now

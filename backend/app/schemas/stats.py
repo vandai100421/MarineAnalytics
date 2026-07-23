@@ -7,6 +7,7 @@ class OverviewResponse(BaseModel):
     active_vessels: int
     total_vessels: int
     avg_sog: float
+    db_total: int = 0
 
 
 class TypeCount(BaseModel):

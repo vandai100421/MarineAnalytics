@@ -20,5 +20,7 @@ class AircraftPosition(Base):
     flight: Mapped[str | None] = mapped_column(Text)
     reg: Mapped[str | None] = mapped_column(Text)
     type: Mapped[str | None] = mapped_column(Text)
+    vertical_rate: Mapped[float | None] = mapped_column(Float)
+    origin_country: Mapped[str | None] = mapped_column(Text)
 
     __table_args__ = (Index("idx_aircraft_hex_ts", "hex", "ts"),)

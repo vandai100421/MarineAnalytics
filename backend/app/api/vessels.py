@@ -119,11 +119,13 @@ async def get_positions(
         if max_sog is not None and sog > max_sog:
             continue
 
+        # Always fetch vessel info for name/flag/ship_type
+        if mmsi not in vessel_cache:
+            vessel_repo = VesselRepository(session)
+            vessel_cache[mmsi] = await vessel_repo.get_by_mmsi(mmsi)
+        vessel = vessel_cache[mmsi]
+
         if ship_type_set is not None or name_lower or dest_lower:
-            if mmsi not in vessel_cache:
-                vessel_repo = VesselRepository(session)
-                vessel_cache[mmsi] = await vessel_repo.get_by_mmsi(mmsi)
-            vessel = vessel_cache[mmsi]
             if vessel is None:
                 continue
             if ship_type_set is not None and vessel.ship_type not in ship_type_set:
@@ -144,6 +146,9 @@ async def get_positions(
                 cog=_to_float(data.get("cog")) or 0.0,
                 heading=_to_float(data.get("heading")) or 0.0,
                 ts=data.get("ts", ""),
+                name=vessel.name if vessel else None,
+                ship_type_name=vessel.ship_type_name if vessel else None,
+                flag=vessel.flag if vessel else None,
             )
         )
 
@@ -357,6 +362,127 @@ async def get_vessel_track(
         total=total,
         points=[PositionReportResponse.model_validate(r) for r in reports],
     )
+
+
+@router.get("/{mmsi}/track-stats")
+async def get_vessel_track_stats(
+    mmsi: int,
+    time_from: datetime | None = Query(None, alias="from"),
+    time_to: datetime | None = Query(None, alias="to"),
+    limit: int = Query(5000, ge=1, le=50000),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, float]:
+    import math
+
+    repo = PositionRepository(session)
+    reports = await repo.get_track(mmsi, time_from, time_to, limit)
+    if len(reports) < 2:
+        return {"total_distance_nm": 0.0, "avg_sog": 0.0, "max_sog": 0.0, "duration_hours": 0.0}
+
+    total_distance = 0.0
+    max_sog = 0.0
+    sog_sum = 0.0
+    sog_count = 0
+    for i, p in enumerate(reports):
+        if p.sog is not None:
+            sog_sum += p.sog
+            sog_count += 1
+            if p.sog > max_sog:
+                max_sog = p.sog
+        if i > 0:
+            prev = reports[i - 1]
+            lat1, lon1 = math.radians(prev.lat), math.radians(prev.lon)
+            lat2, lon2 = math.radians(p.lat), math.radians(p.lon)
+            dlat = lat2 - lat1
+            dlon = lon2 - lon1
+            a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+            total_distance += 2 * 3440.065 * math.asin(math.sqrt(a))
+
+    first_ts = reports[0].ts
+    last_ts = reports[-1].ts
+    duration_hours = (last_ts - first_ts).total_seconds() / 3600.0 if first_ts and last_ts else 0.0
+    avg_sog = sog_sum / sog_count if sog_count > 0 else 0.0
+
+    return {
+        "total_distance_nm": round(total_distance, 2),
+        "avg_sog": round(avg_sog, 2),
+        "max_sog": round(max_sog, 2),
+        "duration_hours": round(duration_hours, 2),
+    }
+
+
+@router.get("/{mmsi}/port-calls")
+async def get_vessel_port_calls(
+    mmsi: int,
+    limit: int = Query(50, ge=1, le=500),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, object]:
+    from sqlalchemy import select
+
+    from app.models.port import Port, PortArrival
+
+    stmt = (
+        select(PortArrival, Port.name.label("port_name"))
+        .outerjoin(Port, PortArrival.port_id == Port.id)
+        .where(PortArrival.mmsi == mmsi)
+        .order_by(PortArrival.arrived_at.desc())
+        .limit(limit)
+    )
+    result = await session.execute(stmt)
+    rows = result.all()
+
+    port_calls = [
+        {
+            "id": r.PortArrival.id,
+            "mmsi": r.PortArrival.mmsi,
+            "port_id": r.PortArrival.port_id,
+            "port_name": r.port_name,
+            "arrived_at": r.PortArrival.arrived_at,
+            "departed_at": r.PortArrival.departed_at,
+            "duration_minutes": r.PortArrival.dwell_minutes,
+            "anchorage": r.PortArrival.anchorage,
+            "lat": r.PortArrival.lat,
+            "lon": r.PortArrival.lon,
+        }
+        for r in rows
+    ]
+    return {"total": len(port_calls), "port_calls": port_calls}
+
+
+@router.get("/{mmsi}/events")
+async def get_vessel_events(
+    mmsi: int,
+    limit: int = Query(50, ge=1, le=500),
+    event_type: str | None = Query(None),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, object]:
+    from sqlalchemy import select
+
+    from app.models.vessel_event import VesselEvent
+
+    stmt = select(VesselEvent).where(VesselEvent.mmsi == mmsi)
+    if event_type:
+        stmt = stmt.where(VesselEvent.event_type == event_type)
+    stmt = stmt.order_by(VesselEvent.ts.desc()).limit(limit)
+    result = await session.execute(stmt)
+    events = result.scalars().all()
+
+    return {
+        "total": len(events),
+        "events": [
+            {
+                "id": e.id,
+                "mmsi": e.mmsi,
+                "event_type": e.event_type,
+                "ts": e.ts,
+                "lat": e.lat,
+                "lon": e.lon,
+                "severity": e.severity,
+                "details": e.details,
+            }
+            for e in events
+        ],
+    }
 
 
 @router.post("/{mmsi}/photo", response_model=VesselResponse)

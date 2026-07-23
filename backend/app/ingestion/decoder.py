@@ -39,6 +39,8 @@ class DecodedMessage:
     dim_d: int | None = None
     destination: str | None = None
     eta: datetime | None = None
+    ais_class: str | None = None
+    draught: float | None = None
 
 
 def decode_message(
@@ -76,6 +78,12 @@ def _decode_dynamic(
     if lat is None or lon is None:
         return None
 
+    ais_class = "A"
+    if message_type in ("StandardClassBPositionReport", "ExtendedClassBPositionReport"):
+        ais_class = "B"
+    elif message_type == "LongRangeAisBroadcast":
+        ais_class = "SAT"
+
     msg = DecodedMessage(
         mmsi=mmsi,
         kind="position",
@@ -87,6 +95,7 @@ def _decode_dynamic(
         heading=_to_float(payload.get("TrueHeading")),
         nav_status=_to_int(payload.get("NavigationalStatus")),
         rot=_to_float(payload.get("RateOfTurn")),
+        ais_class=ais_class,
     )
 
     if message_type == "StandardClassBPositionReport":
@@ -119,6 +128,7 @@ def _decode_static(
     destination = _clean_str(payload.get("Destination"))
     eta = _parse_eta(payload.get("Eta"))
     dim_a, dim_b, dim_c, dim_d = _extract_dimensions(payload)
+    draught = _to_float(payload.get("MaximumActualDraught"))
 
     return DecodedMessage(
         mmsi=mmsi,
@@ -135,6 +145,8 @@ def _decode_static(
         dim_d=dim_d,
         destination=destination,
         eta=eta,
+        ais_class="A",
+        draught=draught,
     )
 
 

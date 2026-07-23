@@ -21,6 +21,9 @@ class VesselPositionResponse(BaseModel):
     cog: float
     heading: float
     ts: str
+    name: str | None = None
+    ship_type_name: str | None = None
+    flag: str | None = None
 
 
 class VesselListResponse(BaseModel):

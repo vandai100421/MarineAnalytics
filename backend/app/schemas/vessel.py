@@ -19,6 +19,14 @@ class VesselResponse(BaseModel):
     destination: str | None = None
     eta: datetime | None = None
     photo_url: str | None = None
+    gt: int | None = None
+    dwt: int | None = None
+    loa: float | None = None
+    beam: float | None = None
+    draught_max: float | None = None
+    year_built: int | None = None
+    flag: str | None = None
+    ais_class: str | None = None
     updated_at: datetime
 
 

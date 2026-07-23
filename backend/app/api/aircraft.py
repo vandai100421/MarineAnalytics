@@ -44,6 +44,8 @@ async def get_aircraft_positions(
                 flight=data.get("flight"),
                 reg=data.get("reg"),
                 type=data.get("type"),
+                vertical_rate=_to_float(data.get("vertical_rate")),
+                origin_country=data.get("origin_country"),
             )
         )
 

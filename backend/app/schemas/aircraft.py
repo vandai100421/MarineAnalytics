@@ -14,3 +14,5 @@ class AircraftPositionResponse(BaseModel):
     flight: str | None = None
     reg: str | None = None
     type: str | None = None
+    vertical_rate: float | None = None
+    origin_country: str | None = None

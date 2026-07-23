@@ -92,11 +92,17 @@ def _convert_state(state: list[Any]) -> dict[str, Any] | None:
         return None
 
     callsign = (state[1] or "").strip()
+    origin_country = state[2]
     baro_alt = state[7]
     geo_alt = state[13] if len(state) > 13 else None
     alt_m = geo_alt if geo_alt is not None else baro_alt
     velocity_ms = state[9]
     true_track = state[10]
+    vertical_rate_ms = state[11] if len(state) > 11 else None
+
+    vertical_rate_fpm: float | None = None
+    if vertical_rate_ms is not None:
+        vertical_rate_fpm = round(float(vertical_rate_ms) * 196.850, 1)
 
     return {
         "hex": icao24,
@@ -108,4 +114,6 @@ def _convert_state(state: list[Any]) -> dict[str, Any] | None:
         "flight": callsign or None,
         "reg": None,
         "type": None,
+        "vertical_rate": vertical_rate_fpm,
+        "origin_country": origin_country,
     }

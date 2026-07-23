@@ -58,6 +58,8 @@ async def upsert_vessel(msg: DecodedMessage) -> None:
             dim_d=msg.dim_d,
             destination=msg.destination,
             eta=msg.eta,
+            ais_class=msg.ais_class,
+            draught_max=msg.draught,
         )
         stmt = stmt.on_conflict_do_update(
             index_elements=[Vessel.mmsi],
@@ -73,6 +75,8 @@ async def upsert_vessel(msg: DecodedMessage) -> None:
                 "dim_d": msg.dim_d,
                 "destination": msg.destination,
                 "eta": msg.eta,
+                "ais_class": msg.ais_class,
+                "draught_max": msg.draught,
             },
         )
         await session.execute(stmt)
@@ -210,6 +214,8 @@ class BatchWriter:
                         dim_d=m.dim_d,
                         destination=m.destination,
                         eta=m.eta,
+                        ais_class=m.ais_class,
+                        draught_max=m.draught,
                     )
                     stmt = stmt.on_conflict_do_update(
                         index_elements=[Vessel.mmsi],
@@ -225,6 +231,8 @@ class BatchWriter:
                             "dim_d": m.dim_d,
                             "destination": m.destination,
                             "eta": m.eta,
+                            "ais_class": m.ais_class,
+                            "draught_max": m.draught,
                         },
                     )
                     await session.execute(stmt)
