@@ -3,6 +3,7 @@ import { MapView } from './components/map/MapView'
 import { TopNavBar } from './components/layout/TopNavBar'
 import { LeftPanel } from './components/layout/LeftPanel'
 import { RightSidebar } from './components/layout/RightSidebar'
+import { ErrorBoundary } from './components/layout/ErrorBoundary'
 import { useMapStore } from './store/mapStore'
 
 export default function App() {
@@ -34,13 +35,17 @@ export default function App() {
         style={{ flexShrink: 0 }}
       >
         <div className="min-h-0 flex-1">
-          <LeftPanel />
+          <ErrorBoundary>
+            <LeftPanel />
+          </ErrorBoundary>
         </div>
       </aside>
 
       <main className="relative mt-14 flex-1">
         <div className="absolute inset-0">
-          <MapView />
+          <ErrorBoundary>
+            <MapView />
+          </ErrorBoundary>
         </div>
       </main>
 
@@ -48,7 +53,9 @@ export default function App() {
         className="glass-dark relative z-20 mt-14 flex"
         style={{ flexShrink: 0 }}
       >
-        <RightSidebar />
+        <ErrorBoundary>
+          <RightSidebar />
+        </ErrorBoundary>
       </aside>
     </div>
   )

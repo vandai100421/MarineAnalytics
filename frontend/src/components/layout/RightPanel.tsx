@@ -112,6 +112,7 @@ function RightPanelComponent() {
                   </p>
                   <Suspense fallback={<div className="text-center text-xs text-ocean-400">{t('panel.loading')}</div>}>
                     <TimelineScrubber
+                      key={selectedMmsi}
                       total={trackData.points.length}
                       onIndexChange={setPlaybackIndex}
                     />
