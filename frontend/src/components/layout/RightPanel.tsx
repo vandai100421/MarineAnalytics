@@ -8,9 +8,16 @@ import { VoyageSection } from '../panel/VoyageSection'
 import { PortInfo } from '../panel/PortInfo'
 import { AircraftInfo } from '../panel/AircraftInfo'
 import { SpeedProfile } from '../panel/SpeedProfile'
+import { CourseProfile } from '../panel/CourseProfile'
+import { DistanceProfile } from '../panel/DistanceProfile'
 import { useAircraftPositions } from '../../api/aircraft'
 import { useVesselTrack } from '../../api/vessels'
-import { exportTrackCSV } from '../../api/exports'
+import { VesselHeader } from '../panel/VesselHeader'
+import { TrackTools } from '../panel/TrackTools'
+import { VesselFooterToolbar } from '../panel/VesselFooterToolbar'
+import { PortCallsSection } from '../panel/PortCallsSection'
+import { VesselEventsSection } from '../panel/VesselEventsSection'
+import { VoyageStats } from '../panel/VoyageStats'
 
 const TimelineScrubber = lazy(() =>
   import('../playback/TimelineScrubber').then((m) => ({ default: m.TimelineScrubber })),
@@ -24,7 +31,9 @@ function RightPanelComponent() {
   const sections = useMapStore((s) => s.rightPanelSections)
   const toggleSection = useMapStore((s) => s.toggleSection)
   const setPlaybackIndex = useMapStore((s) => s.setPlaybackIndex)
-  const { data: trackData } = useVesselTrack(selectedMmsi)
+  const trackFrom = useMapStore((s) => s.trackFrom)
+  const trackTo = useMapStore((s) => s.trackTo)
+  const { data: trackData } = useVesselTrack(selectedMmsi, trackFrom ?? undefined, trackTo ?? undefined)
   const { data: aircraftData } = useAircraftPositions(bbox)
   const t = useT()
 
@@ -50,6 +59,8 @@ function RightPanelComponent() {
 
       {selectedMmsi !== null && (
         <>
+          <VesselHeader mmsi={selectedMmsi} />
+
           <VesselPhoto mmsi={selectedMmsi} />
 
           <Section
@@ -79,7 +90,10 @@ function RightPanelComponent() {
             onToggle={() => toggleSection('voyage')}
             accentColor="text-amber-400"
           >
-            <VoyageSection mmsi={selectedMmsi} />
+            <div className="space-y-3">
+              <VoyageSection mmsi={selectedMmsi} />
+              <VoyageStats mmsi={selectedMmsi} />
+            </div>
           </Section>
 
           <Section
@@ -90,37 +104,52 @@ function RightPanelComponent() {
             accentColor="text-purple-300"
           >
             <div className="space-y-3">
+              <TrackTools mmsi={selectedMmsi} />
               {trackData && trackData.points.length > 0 ? (
                 <>
                   <p className="text-xs text-ocean-400">
                     {trackData.total} {t('vessel.positionReports')}
                   </p>
-                  <button
-                    onClick={() => exportTrackCSV(selectedMmsi)}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-sea-500/30 bg-sea-500/10 px-3 py-2 text-xs font-medium text-sea-300 transition-all hover:bg-sea-500/20"
-                  >
-                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    {t('vessel.exportTrack')}
-                  </button>
                   <Suspense fallback={<div className="text-center text-xs text-ocean-400">{t('panel.loading')}</div>}>
                     <TimelineScrubber
                       total={trackData.points.length}
                       onIndexChange={setPlaybackIndex}
                     />
                   </Suspense>
-                  <div className="rounded-lg border border-ocean-700/40 bg-ocean-900/40 p-2">
-                    <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-ocean-400">
-                      {t('section.speedProfile')}
-                    </p>
+                  <ProfileBlock label={t('section.speedProfile')}>
                     <SpeedProfile mmsi={selectedMmsi} />
-                  </div>
+                  </ProfileBlock>
+                  <ProfileBlock label={t('section.courseProfile')}>
+                    <CourseProfile mmsi={selectedMmsi} />
+                  </ProfileBlock>
+                  <ProfileBlock label={t('section.distanceProfile')}>
+                    <DistanceProfile mmsi={selectedMmsi} />
+                  </ProfileBlock>
                 </>
               ) : (
                 <p className="text-xs text-ocean-500">{t('vessel.noTrack')}</p>
               )}
             </div>
+          </Section>
+
+          <Section
+            title={t('section.portCalls')}
+            icon="M12 2C8 2 5 5 5 9c0 5 7 13 7 13s7-8 7-13c0-4-3-7-7-7z M12 7a2 2 0 100 4 2 2 0 000-4z"
+            isOpen={sections.portCalls}
+            onToggle={() => toggleSection('portCalls')}
+            accentColor="text-amber-300"
+          >
+            <PortCallsSection mmsi={selectedMmsi} />
+          </Section>
+
+          <Section
+            title={t('section.eventsAnomalies')}
+            icon="M12 2a10 10 0 100 20 10 10 0 000-20z M12 8v4 M12 16h.01"
+            isOpen={sections.events}
+            onToggle={() => toggleSection('events')}
+            accentColor="text-red-300"
+          >
+            <VesselEventsSection mmsi={selectedMmsi} />
           </Section>
         </>
       )}
@@ -133,6 +162,19 @@ function RightPanelComponent() {
           <AircraftInfo hex={selectedHex} positions={aircraftData} />
         </div>
       )}
+
+      {selectedMmsi !== null && <VesselFooterToolbar mmsi={selectedMmsi} />}
+    </div>
+  )
+}
+
+function ProfileBlock({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border border-ocean-700/40 bg-ocean-900/40 p-2">
+      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-ocean-400">
+        {label}
+      </p>
+      {children}
     </div>
   )
 }

@@ -39,10 +39,15 @@ export function AircraftInfo({ hex, positions }: AircraftInfoProps) {
           <svg className="h-5 w-5 text-purple-300" viewBox="0 0 24 24" fill="currentColor">
             <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 00-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
           </svg>
-          <div>
-            <h2 className="text-base font-bold text-white">{aircraft.flight ?? t('aircraft.unknownFlight')}</h2>
+          <div className="flex-1 min-w-0">
+            <h2 className="truncate text-base font-bold text-white">{aircraft.flight ?? t('aircraft.unknownFlight')}</h2>
             <p className="font-mono text-[10px] text-ocean-400">HEX {aircraft.hex}</p>
           </div>
+          {aircraft.origin_country && (
+            <span className="rounded bg-ocean-800/70 px-1.5 py-0.5 text-[9px] font-medium text-ocean-200">
+              {aircraft.origin_country}
+            </span>
+          )}
         </div>
       </div>
 
@@ -50,10 +55,34 @@ export function AircraftInfo({ hex, positions }: AircraftInfoProps) {
         <StatCard label={t('field.altitude')} value={aircraft.alt !== null ? `${aircraft.alt}` : '—'} unit="ft" />
         <StatCard label={t('field.groundSpeed')} value={aircraft.gs !== null ? `${aircraft.gs}` : '—'} unit="kn" />
         <StatCard label={t('field.track')} value={aircraft.track !== null ? `${aircraft.track}` : '—'} unit="°" />
+        <StatCard
+          label="Vertical Rate"
+          value={aircraft.vertical_rate !== null ? `${aircraft.vertical_rate > 0 ? '+' : ''}${aircraft.vertical_rate}` : '—'}
+          unit="fpm"
+        />
         <StatCard label={t('field.type')} value={aircraft.type ?? '—'} />
         <StatCard label={t('field.registration')} value={aircraft.reg ?? '—'} />
-        <StatCard label={t('field.position')} value={`${aircraft.lat.toFixed(2)}, ${aircraft.lon.toFixed(2)}`} />
       </div>
+
+      {aircraft.vertical_rate !== null && (
+        <div
+          className={`rounded-lg border p-2 text-center text-xs font-medium ${
+            aircraft.vertical_rate > 100
+              ? 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+              : aircraft.vertical_rate < -100
+                ? 'border-blue-500/30 bg-blue-500/10 text-blue-300'
+                : 'border-ocean-700/40 bg-ocean-900/40 text-ocean-300'
+          }`}
+        >
+          {aircraft.vertical_rate > 100
+            ? `↑ Climbing ${Math.abs(aircraft.vertical_rate).toFixed(0)} fpm`
+            : aircraft.vertical_rate < -100
+              ? `↓ Descending ${Math.abs(aircraft.vertical_rate).toFixed(0)} fpm`
+              : '— Level flight'}
+        </div>
+      )}
+
+      <StatCard label={t('field.position')} value={`${aircraft.lat.toFixed(2)}, ${aircraft.lon.toFixed(2)}`} />
     </div>
   )
 }

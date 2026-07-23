@@ -94,11 +94,29 @@ export function VesselInfo({ mmsi, section = 'all' }: VesselInfoProps) {
                   : '—'
               }
             />
+            {vessel!.ais_class && (
+              <StatCard label="AIS Class" value={vessel!.ais_class} />
+            )}
+            {vessel!.flag && (
+              <StatCard label={t('vessel.flag')} value={vessel!.flag} />
+            )}
+            {vessel!.year_built && (
+              <StatCard label="Year Built" value={String(vessel!.year_built)} />
+            )}
+            {vessel!.gt !== null && vessel!.gt !== undefined && (
+              <StatCard label="Gross Tonnage" value={String(vessel!.gt)} unit="t" />
+            )}
+            {vessel!.dwt !== null && vessel!.dwt !== undefined && (
+              <StatCard label="Deadweight" value={String(vessel!.dwt)} unit="t" />
+            )}
+            {vessel!.draught_max !== null && vessel!.draught_max !== undefined && (
+              <StatCard label="Draught Max" value={vessel!.draught_max.toFixed(1)} unit="m" />
+            )}
           </div>
 
           {(() => {
-            const length = (vessel!.dim_a ?? 0) + (vessel!.dim_b ?? 0)
-            const beam = (vessel!.dim_c ?? 0) + (vessel!.dim_d ?? 0)
+            const length = vessel!.loa ?? (vessel!.dim_a ?? 0) + (vessel!.dim_b ?? 0)
+            const beam = vessel!.beam ?? (vessel!.dim_c ?? 0) + (vessel!.dim_d ?? 0)
             if (length > 0 && beam > 0) {
               return (
                 <div className="rounded-lg border border-ocean-700/40 bg-ocean-900/40 p-3">
@@ -115,13 +133,17 @@ export function VesselInfo({ mmsi, section = 'all' }: VesselInfoProps) {
                       <p className="text-[10px] text-ocean-500">{t('field.beam')}</p>
                       <p className="text-sm font-semibold text-white">{beam}m</p>
                     </div>
-                    <div className="h-6 w-px bg-ocean-700" />
-                    <div className="flex-1">
-                      <p className="text-[10px] text-ocean-500">A+B</p>
-                      <p className="text-sm font-semibold text-white">
-                        {vessel!.dim_a}+{vessel!.dim_b}
-                      </p>
-                    </div>
+                    {(vessel!.dim_a || vessel!.dim_b) && (
+                      <>
+                        <div className="h-6 w-px bg-ocean-700" />
+                        <div className="flex-1">
+                          <p className="text-[10px] text-ocean-500">A+B</p>
+                          <p className="text-sm font-semibold text-white">
+                            {vessel!.dim_a}+{vessel!.dim_b}
+                          </p>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               )

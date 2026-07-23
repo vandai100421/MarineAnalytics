@@ -1,5 +1,11 @@
 import { memo, lazy, Suspense } from 'react'
-import { usePort, usePortCongestion, usePortArrivals } from '../../api/ports'
+import {
+  usePort,
+  usePortCongestion,
+  usePortArrivals,
+  usePortExpectedArrivals,
+  usePortRecentDepartures,
+} from '../../api/ports'
 import { exportPortArrivalsCSV } from '../../api/exports'
 import { useMapStore } from '../../store/mapStore'
 import { useT } from '../../i18n/useI18n'
@@ -16,6 +22,8 @@ function PortInfoComponent({ portId }: PortInfoProps) {
   const { data: port, isLoading: portLoading } = usePort(portId)
   const { data: congestion } = usePortCongestion(portId)
   const { data: arrivalsData, isLoading: arrivalsLoading } = usePortArrivals(portId, 20)
+  const { data: expectedData } = usePortExpectedArrivals(portId, 24)
+  const { data: departuresData } = usePortRecentDepartures(portId, 24)
   const setSelectedMmsi = useMapStore((s) => s.setSelectedMmsi)
   const setSelectedPortId = useMapStore((s) => s.setSelectedPortId)
   const t = useT()
@@ -154,6 +162,91 @@ function PortInfoComponent({ portId }: PortInfoProps) {
           <p className="py-4 text-center text-xs text-ocean-500">
             {t('port.noArrivals')}
           </p>
+        )}
+      </div>
+
+      <div className="border-b border-ocean-700/40 p-4">
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ocean-200">
+          Expected Arrivals (24h)
+        </h3>
+        {expectedData && expectedData.vessels.length > 0 ? (
+          <div className="space-y-1.5">
+            {expectedData.vessels.slice(0, 10).map((v) => (
+              <div
+                key={v.mmsi}
+                className="flex items-center gap-2 rounded-lg border border-ocean-700/40 bg-ocean-900/40 p-2"
+              >
+                <div className="h-2 w-2 flex-shrink-0 rounded-full bg-amber-500" />
+                <button
+                  onClick={() => {
+                    setSelectedMmsi(v.mmsi)
+                    setSelectedPortId(null)
+                  }}
+                  className="font-mono text-xs text-sea-300 hover:underline"
+                >
+                  {v.name ?? v.mmsi}
+                </button>
+                <span className="ml-auto text-[10px] text-ocean-400">
+                  {v.eta
+                    ? new Date(v.eta).toLocaleString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : '—'}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="py-3 text-center text-xs text-ocean-500">No expected arrivals</p>
+        )}
+      </div>
+
+      <div className="border-b border-ocean-700/40 p-4">
+        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-ocean-200">
+          Recent Departures (24h)
+        </h3>
+        {departuresData && departuresData.departures.length > 0 ? (
+          <div className="space-y-1.5">
+            {departuresData.departures.slice(0, 10).map((d) => (
+              <div
+                key={d.id}
+                className="flex items-center gap-2 rounded-lg border border-ocean-700/40 bg-ocean-900/40 p-2"
+              >
+                <div className="h-2 w-2 flex-shrink-0 rounded-full bg-ocean-500" />
+                <button
+                  onClick={() => {
+                    setSelectedMmsi(d.mmsi)
+                    setSelectedPortId(null)
+                  }}
+                  className="font-mono text-xs text-sea-300 hover:underline"
+                >
+                  {d.mmsi}
+                </button>
+                {d.dwell_minutes && (
+                  <span className="text-[10px] text-ocean-400">
+                    {d.dwell_minutes < 60
+                      ? `${Math.round(d.dwell_minutes)}m`
+                      : `${(d.dwell_minutes / 60).toFixed(1)}h`}
+                  </span>
+                )}
+                <span className="ml-auto text-[10px] text-ocean-400">
+                  {d.departed_at
+                    ? new Date(d.departed_at).toLocaleString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : '—'}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="py-3 text-center text-xs text-ocean-500">No recent departures</p>
         )}
       </div>
 
