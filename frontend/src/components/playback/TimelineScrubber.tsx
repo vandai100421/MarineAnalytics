@@ -27,6 +27,12 @@ export function TimelineScrubber({ total, onIndexChange }: TimelineScrubberProps
   }, [onIndexChange])
 
   useEffect(() => {
+    setCurrent(0)
+    setIsPlaying(false)
+    onIndexChange(0)
+  }, [total, onIndexChange])
+
+  useEffect(() => {
     if (!isPlaying || current >= total - 1) {
       if (current >= total - 1) setIsPlaying(false)
       return

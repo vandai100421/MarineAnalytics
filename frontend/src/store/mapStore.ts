@@ -103,6 +103,7 @@ export const useMapStore = create<MapState>((set) => ({
       selectedHex: null,
       selectedPortId: null,
       rightActiveTab: mmsi !== null ? 'details' : null,
+      playbackIndex: 0,
     }),
   setSelectedHex: (hex) =>
     set({
@@ -110,6 +111,7 @@ export const useMapStore = create<MapState>((set) => ({
       selectedMmsi: null,
       selectedPortId: null,
       rightActiveTab: hex !== null ? 'details' : null,
+      playbackIndex: 0,
     }),
   setSelectedPortId: (portId) =>
     set({
@@ -117,6 +119,7 @@ export const useMapStore = create<MapState>((set) => ({
       selectedMmsi: null,
       selectedHex: null,
       rightActiveTab: portId !== null ? 'details' : null,
+      playbackIndex: 0,
     }),
   setSelectedFleetId: (fleetId) => set({ selectedFleetId: fleetId }),
   clearSelection: () =>
