@@ -10,8 +10,8 @@ import {
 } from '../utils/geo'
 import type { BoundingBox } from '../types'
 
-const REST_DEBOUNCE_MS = 500
-const SSE_DEBOUNCE_MS = 1500
+const REST_DEBOUNCE_MS = 200
+const SSE_DEBOUNCE_MS = 1000
 
 interface ViewportState {
   zoom: number
