@@ -13,9 +13,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import json
 import time
-from collections.abc import AsyncIterator
 
 import httpx
 
@@ -77,7 +75,7 @@ async def sse_client(
 
 
 async def run_load_test(base_url: str, num_clients: int, duration: int, bbox: str) -> None:
-    print(f"=== SSE Load Test ===")
+    print("=== SSE Load Test ===")
     print(f"URL: {base_url}/sse/positions?bbox={bbox}")
     print(f"Clients: {num_clients}, Duration: {duration}s")
     print()
@@ -99,9 +97,10 @@ async def run_load_test(base_url: str, num_clients: int, duration: int, bbox: st
     total_msgs = int(results["total_messages"])
 
     print()
-    print(f"=== Results ===")
+    print("=== Results ===")
     print(f"Elapsed: {elapsed:.1f}s")
-    print(f"Connected: {connected_count}/{num_clients} ({connected_count / num_clients * 100:.1f}%)")
+    pct = connected_count / num_clients * 100
+    print(f"Connected: {connected_count}/{num_clients} ({pct:.1f}%)")
     print(f"Total messages: {total_msgs}")
     print(f"Avg msgs/sec: {total_msgs / elapsed:.1f}")
     print(f"Avg msgs/sec/client: {total_msgs / elapsed / num_clients:.1f}")

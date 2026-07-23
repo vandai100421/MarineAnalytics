@@ -56,7 +56,13 @@ def mock_redis():
 
 @pytest.fixture
 def mock_session():
-    return AsyncMock()
+    session = AsyncMock()
+    execute_result = MagicMock()
+    execute_result.scalar_one_or_none.return_value = None
+    execute_result.scalars.return_value.all.return_value = []
+    execute_result.scalar_one.return_value = 0
+    session.execute = AsyncMock(return_value=execute_result)
+    return session
 
 
 @pytest.fixture

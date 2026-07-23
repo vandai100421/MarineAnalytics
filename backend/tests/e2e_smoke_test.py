@@ -62,7 +62,11 @@ async def test_ingestion_metrics(client: httpx.AsyncClient) -> None:
         resp = await client.get(f"{BASE_URL}/metrics", timeout=5)
         if resp.status_code == 200:
             text = resp.text
-            msgs_line = [l for l in text.split("\n") if l.startswith("marineanalytics_messages_total") and not l.startswith("#")]
+            msgs_line = [
+                line
+                for line in text.split("\n")
+                if line.startswith("marineanalytics_messages_total") and not line.startswith("#")
+            ]
             if msgs_line:
                 total = int(msgs_line[0].split()[1])
                 if total > 0:
@@ -131,7 +135,9 @@ async def test_rest_positions(client: httpx.AsyncClient) -> None:
 async def test_sse_stream(client: httpx.AsyncClient) -> None:
     try:
         received = False
-        async with client.stream("GET", f"{BASE_URL}/sse/positions?bbox=100,0,110,25", timeout=10) as resp:
+        async with client.stream(
+            "GET", f"{BASE_URL}/sse/positions?bbox=100,0,110,25", timeout=10
+        ) as resp:
             if resp.status_code == 200:
                 async for line in resp.aiter_lines():
                     if line.startswith("data:"):
