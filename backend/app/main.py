@@ -11,11 +11,13 @@ from app.api.exports import router as exports_router
 from app.api.fleets import router as fleets_router
 from app.api.geofences import router as geofences_router
 from app.api.idle_events import router as idle_events_router
+from app.api.import_api import router as import_router
 from app.api.monitoring import router as monitoring_router
 from app.api.ports import router as ports_router
 from app.api.stats import router as stats_router
 from app.api.trade_flows import router as trade_flows_router
 from app.api.vessels import router as vessels_router
+from app.api.weather import router as weather_router
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
 from app.core.logging import get_logger, setup_logging
@@ -42,12 +44,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
     from app.ingestion.aisstream_client import connect_aisstream
     from app.ingestion.opensky_client import poll_opensky
+    from app.tasks.anomaly_detector import run_anomaly_detector
 
     ingestion_task = asyncio.create_task(connect_aisstream())
     logger.info("ingestion_task_started")
 
     adsb_task = asyncio.create_task(poll_opensky())
     logger.info("adsb_task_started")
+
+    anomaly_task = asyncio.create_task(run_anomaly_detector(300))
+    logger.info("anomaly_detector_task_started")
 
     await subscriber_manager.start_broadcaster(interval=settings.sse_batch_interval_seconds)
     logger.info("sse_broadcaster_started")
@@ -57,7 +63,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await subscriber_manager.stop_broadcaster()
     ingestion_task.cancel()
     adsb_task.cancel()
-    for task in (ingestion_task, adsb_task):
+    anomaly_task.cancel()
+    for task in (ingestion_task, adsb_task, anomaly_task):
         try:
             await task
         except (asyncio.CancelledError, Exception) as exc:
@@ -98,6 +105,8 @@ def create_app() -> FastAPI:
     app.include_router(alerts_router)
     app.include_router(sse_router)
     app.include_router(monitoring_router)
+    app.include_router(weather_router)
+    app.include_router(import_router)
     register_error_handlers(app)
 
     @app.get("/health")
