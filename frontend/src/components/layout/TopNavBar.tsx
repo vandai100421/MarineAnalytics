@@ -1,15 +1,18 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { useMapStore } from '../../store/mapStore'
 import { useStatsOverview } from '../../api/stats'
 import { useI18n } from '../../i18n/useI18n'
+import { ImportDialog } from '../panel/ImportDialog'
 
 function TopNavBarComponent() {
   const leftPanelOpen = useMapStore((s) => s.leftPanelOpen)
   const setLeftPanelOpen = useMapStore((s) => s.setLeftPanelOpen)
   const { data: stats } = useStatsOverview()
   const { t } = useI18n()
+  const [importOpen, setImportOpen] = useState(false)
 
   return (
+    <>
     <header className="glass-dark absolute left-0 right-0 top-0 z-30 flex h-14 items-center gap-3 border-b border-ocean-700/50 px-4">
       <div className="flex items-center gap-2">
         <svg className="h-7 w-7 text-sea-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -42,6 +45,17 @@ function TopNavBarComponent() {
       <div className="flex-1" />
 
       <button
+        onClick={() => setImportOpen(true)}
+        className="flex items-center gap-1.5 rounded-lg bg-sea-500/20 px-3 py-1.5 text-xs font-medium text-sea-300 transition-all hover:bg-sea-500/30 hover:text-white"
+        title={t('import.title')}
+      >
+        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        <span className="hidden sm:inline">{t('import.button')}</span>
+      </button>
+
+      <button
         onClick={() => setLeftPanelOpen(!leftPanelOpen)}
         className={`rounded-lg p-2 transition-colors ${
           leftPanelOpen
@@ -54,7 +68,10 @@ function TopNavBarComponent() {
           <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" />
         </svg>
       </button>
-    </header>
+      </header>
+
+      <ImportDialog isOpen={importOpen} onClose={() => setImportOpen(false)} />
+    </>
   )
 }
 

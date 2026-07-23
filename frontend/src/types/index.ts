@@ -343,3 +343,25 @@ export const SHIP_TYPE_OPTIONS = [
   { value: 80, label: 'Tanker' },
   { value: 90, label: 'Other' },
 ] as const
+
+export interface ImportSummary {
+  version: string
+  imported_at: string | null
+  crawl_run_id: number | null
+  vessels_created: number
+  vessels_updated: number
+  positions_created: number
+  aircraft_created: number
+  ports_created: number
+  weather_created: number
+  redis_synced: number
+  aircraft_redis_synced: number
+  errors: string[]
+}
+
+export interface SyncRedisResult {
+  vessels_synced: number
+  aircraft_synced: number
+  redis_key_format: string
+  ttl_seconds: number
+}

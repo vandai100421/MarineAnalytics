@@ -18,7 +18,7 @@ from app.models.port import Port
 from app.models.position import PositionReport
 from app.models.vessel import Vessel
 
-router = APIRouter(prefix="/import", tags=["import"])
+router = APIRouter(prefix="/api/v1/import", tags=["import"])
 
 REDIS_SYNC_TTL = 3600
 
@@ -542,7 +542,8 @@ async def sync_redis_only(
 ) -> dict[str, int | str]:
     """Push snapshot data to Redis only (no PostgreSQL write).
 
-    Accepts snapshot.json from crawler — syncs pos:{mmsi} hashes for realtime map.
+    Accepts snapshot.json or full.json from crawler — syncs pos:{mmsi}
+    and air:{hex} hashes for realtime map.
     """
     if not file.filename or not file.filename.endswith(".json"):
         raise HTTPException(400, "Only JSON files supported")
@@ -550,20 +551,43 @@ async def sync_redis_only(
     content = await file.read()
     data = json.loads(content)
 
-    records = data.get("records", [])
-    if not records and data.get("snapshot"):
-        records = data["snapshot"].get("records", [])
-
     redis = await get_redis()
     vessel_synced = 0
     aircraft_synced = 0
 
-    for rec in records:
-        if rec.get("hex"):
-            if await _sync_aircraft_to_redis(redis, rec):
-                aircraft_synced += 1
-        elif await _sync_vessel_to_redis(redis, rec):
-            vessel_synced += 1
+    # Format 1: snapshot.json — flat records list
+    snapshot_records = data.get("records", [])
+    if not snapshot_records:
+        snapshot_records = data.get("snapshot", {}).get("records", [])
+
+    if snapshot_records:
+        for rec in snapshot_records:
+            if rec.get("hex"):
+                if await _sync_aircraft_to_redis(redis, rec):
+                    aircraft_synced += 1
+            elif await _sync_vessel_to_redis(redis, rec):
+                vessel_synced += 1
+    else:
+        # Format 2: full.json — vessel_positions + aircraft_positions sections
+        # Sync only latest position per vessel (reverse order, dedupe by mmsi)
+        vp_records = data.get("vessel_positions", {}).get("records", [])
+        seen_mmsi: set[int] = set()
+        for rec in reversed(vp_records):
+            mmsi = rec.get("mmsi")
+            if mmsi and mmsi not in seen_mmsi:
+                seen_mmsi.add(mmsi)
+                if await _sync_vessel_to_redis(redis, rec):
+                    vessel_synced += 1
+
+        # Aircraft — latest per hex
+        ap_records = data.get("aircraft_positions", {}).get("records", [])
+        seen_hex: set[str] = set()
+        for rec in reversed(ap_records):
+            hex_code = rec.get("hex")
+            if hex_code and hex_code not in seen_hex:
+                seen_hex.add(hex_code)
+                if await _sync_aircraft_to_redis(redis, rec):
+                    aircraft_synced += 1
 
     return {
         "vessels_synced": vessel_synced,
