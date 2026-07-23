@@ -72,7 +72,7 @@ function VesselSearchComponent() {
               <button
                 key={v.mmsi}
                 onClick={() => handleSelect(v.mmsi)}
-                className="flex w-full items-center gap-3 border-b border-ocean-800/50 px-3 py-2 text-left transition-colors last:border-0 hover:bg-ocean-800/50"
+                className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-ocean-800/50"
               >
                 <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-sea-500/20">
                   <svg className="h-4 w-4 text-sea-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

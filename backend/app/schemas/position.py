@@ -38,6 +38,8 @@ class VesselListResponse(BaseModel):
 
 
 class PositionReportResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     mmsi: int
     ts: datetime
     lat: float
