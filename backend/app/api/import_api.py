@@ -5,16 +5,22 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from geoalchemy2.elements import WKTElement
 from pydantic import BaseModel
+from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
+from app.core.redis import get_redis
+from app.ingestion.adsb_writer import REDIS_AIR_KEY_PREFIX, REDIS_AIR_TTL
+from app.ingestion.writer import REDIS_POS_KEY_PREFIX
 from app.models.aircraft import AircraftPosition
 from app.models.port import Port
 from app.models.position import PositionReport
 from app.models.vessel import Vessel
 
 router = APIRouter(prefix="/import", tags=["import"])
+
+REDIS_SYNC_TTL = 3600
 
 
 class ImportSummary(BaseModel):
@@ -27,7 +33,50 @@ class ImportSummary(BaseModel):
     aircraft_created: int = 0
     ports_created: int = 0
     weather_created: int = 0
+    redis_synced: int = 0
+    aircraft_redis_synced: int = 0
     errors: list[str] = []
+
+
+async def _sync_vessel_to_redis(redis: Redis, rec: dict[str, object]) -> bool:  # type: ignore[type-arg]
+    mmsi = rec.get("mmsi")
+    if not mmsi or not rec.get("lat") or not rec.get("lon"):
+        return False
+    key = f"{REDIS_POS_KEY_PREFIX}{mmsi}"
+    await redis.hset(
+        key,
+        mapping={
+            "mmsi": str(mmsi),
+            "lat": str(rec["lat"]),
+            "lon": str(rec["lon"]),
+            "sog": str(rec.get("sog", 0)),
+            "cog": str(rec.get("cog", 0)),
+            "heading": str(rec.get("heading", 0)),
+            "ts": str(rec.get("ts", "")),
+        },
+    )
+    await redis.expire(key, REDIS_SYNC_TTL)
+    return True
+
+
+async def _sync_aircraft_to_redis(redis: Redis, rec: dict[str, object]) -> bool:  # type: ignore[type-arg]
+    hex_code = rec.get("hex")
+    if not hex_code or not rec.get("lat") or not rec.get("lon"):
+        return False
+    key = f"{REDIS_AIR_KEY_PREFIX}{hex_code}"
+    mapping: dict[str, str] = {
+        "hex": str(hex_code),
+        "lat": str(rec["lat"]),
+        "lon": str(rec["lon"]),
+        "ts": str(rec.get("ts", "")),
+    }
+    for field in ("alt", "gs", "track", "flight", "reg", "type", "vertical_rate", "origin_country"):
+        val = rec.get(field)
+        if val is not None:
+            mapping[field] = str(val)
+    await redis.hset(key, mapping=mapping)  # type: ignore[arg-type]
+    await redis.expire(key, REDIS_AIR_TTL)
+    return True
 
 
 @router.post("/vessels")
@@ -117,6 +166,11 @@ async def import_vessels(
     if summary.positions_created > 0:
         await session.commit()
 
+    redis = await get_redis()
+    for rec in records:
+        if await _sync_vessel_to_redis(redis, rec):
+            summary.redis_synced += 1
+
     return summary
 
 
@@ -184,6 +238,11 @@ async def import_aircraft(
 
     if summary.aircraft_created > 0:
         await session.commit()
+
+    redis = await get_redis()
+    for rec in records:
+        if await _sync_aircraft_to_redis(redis, rec):
+            summary.aircraft_redis_synced += 1
 
     return summary
 
@@ -422,6 +481,30 @@ async def import_full(
         await session.commit()
     except Exception:
         await session.rollback()
+
+    # Sync snapshot to Redis for realtime map
+    redis = await get_redis()
+    snapshot_data = data.get("snapshot", {})
+    snapshot_records = snapshot_data.get("records", [])
+    for rec in snapshot_records:
+        if await _sync_vessel_to_redis(redis, rec):
+            summary.redis_synced += 1
+
+    # Sync aircraft positions to Redis
+    for rec in ap_records:
+        if await _sync_aircraft_to_redis(redis, rec):
+            summary.aircraft_redis_synced += 1
+
+    # If no snapshot section, sync from vessel_positions (latest per mmsi)
+    if not snapshot_records:
+        seen_mmsi: set[int] = set()
+        for rec in reversed(vp_records):
+            mmsi = rec.get("mmsi")
+            if mmsi and mmsi not in seen_mmsi:
+                seen_mmsi.add(mmsi)
+                if await _sync_vessel_to_redis(redis, rec):
+                    summary.redis_synced += 1
+
     return summary
 
 
@@ -443,5 +526,48 @@ async def import_status() -> dict[str, object]:
             "aircraft": "/api/v1/import/aircraft",
             "ports": "/api/v1/import/ports",
             "full": "/api/v1/import/full",
+            "sync_redis": "/api/v1/import/sync/redis",
         },
+        "redis": {
+            "vessel_key_format": f"{REDIS_POS_KEY_PREFIX}{{mmsi}}",
+            "aircraft_key_format": f"{REDIS_AIR_KEY_PREFIX}{{hex}}",
+            "ttl_seconds": REDIS_SYNC_TTL,
+        },
+    }
+
+
+@router.post("/sync/redis")
+async def sync_redis_only(
+    file: UploadFile = File(...),
+) -> dict[str, int | str]:
+    """Push snapshot data to Redis only (no PostgreSQL write).
+
+    Accepts snapshot.json from crawler — syncs pos:{mmsi} hashes for realtime map.
+    """
+    if not file.filename or not file.filename.endswith(".json"):
+        raise HTTPException(400, "Only JSON files supported")
+
+    content = await file.read()
+    data = json.loads(content)
+
+    records = data.get("records", [])
+    if not records and data.get("snapshot"):
+        records = data["snapshot"].get("records", [])
+
+    redis = await get_redis()
+    vessel_synced = 0
+    aircraft_synced = 0
+
+    for rec in records:
+        if rec.get("hex"):
+            if await _sync_aircraft_to_redis(redis, rec):
+                aircraft_synced += 1
+        elif await _sync_vessel_to_redis(redis, rec):
+            vessel_synced += 1
+
+    return {
+        "vessels_synced": vessel_synced,
+        "aircraft_synced": aircraft_synced,
+        "redis_key_format": f"{REDIS_POS_KEY_PREFIX}{{mmsi}}",
+        "ttl_seconds": REDIS_SYNC_TTL,
     }
