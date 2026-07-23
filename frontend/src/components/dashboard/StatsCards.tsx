@@ -8,16 +8,17 @@ function StatsCardsComponent() {
 
   if (isLoading || !data) {
     return (
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         <Card label={t('stat.active')} value="—" />
         <Card label={t('stat.total')} value="—" />
+        <Card label={t('stat.dbTotal')} value="—" />
         <Card label={t('stat.avgSpeed')} value="—" />
       </div>
     )
   }
 
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className="grid grid-cols-4 gap-2">
       <Card
         label={t('stat.active')}
         value={String(data.active_vessels)}
@@ -31,6 +32,13 @@ function StatsCardsComponent() {
         icon="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-2a4 4 0 100-8 4 4 0 000 8z"
         color="text-green-400"
         bg="from-green-500/10 to-transparent"
+      />
+      <Card
+        label={t('stat.dbTotal')}
+        value={String(data.db_total)}
+        icon="M4 7v10c0 2 4 3 8 3s8-1 8-3V7M4 7c0 2 4 3 8 3s8-1 8-3M4 7c0-2 4-3 8-3s8 1 8 3"
+        color="text-ocean-400"
+        bg="from-ocean-700/20 to-transparent"
       />
       <Card
         label={t('stat.avgSpeed')}

@@ -3,9 +3,11 @@ import { apiFetch } from './client'
 import type {
   BoundingBox,
   PaginatedResponse,
+  PortCallListResponse,
   PredictedEta,
   TrackResponse,
   Vessel,
+  VesselEventListResponse,
   VesselListItem,
   VesselPosition,
   VesselSearchResult,
@@ -168,5 +170,43 @@ export function useVesselEta(mmsi: number | null) {
     enabled: mmsi !== null,
     refetchInterval: 30_000,
     retry: false,
+  })
+}
+
+export function useVesselTrackStats(
+  mmsi: number | null,
+  from?: string,
+  to?: string,
+) {
+  const params = new URLSearchParams()
+  if (from) params.set('from', from)
+  if (to) params.set('to', to)
+  const query = params.toString()
+  return useQuery<{ total_distance_nm: number; avg_sog: number; max_sog: number; duration_hours: number }>({
+    queryKey: ['vessel-track-stats', mmsi, query],
+    queryFn: () =>
+      apiFetch<{ total_distance_nm: number; avg_sog: number; max_sog: number; duration_hours: number }>(
+        `/api/v1/vessels/${mmsi}/track-stats${query ? `?${query}` : ''}`,
+      ),
+    enabled: mmsi !== null,
+    refetchInterval: 60_000,
+  })
+}
+
+export function useVesselPortCalls(mmsi: number | null, limit: number = 20) {
+  return useQuery<PortCallListResponse>({
+    queryKey: ['vessel-port-calls', mmsi, limit],
+    queryFn: () => apiFetch<PortCallListResponse>(`/api/v1/vessels/${mmsi}/port-calls?limit=${limit}`),
+    enabled: mmsi !== null,
+    refetchInterval: 60_000,
+  })
+}
+
+export function useVesselEvents(mmsi: number | null, limit: number = 20) {
+  return useQuery<VesselEventListResponse>({
+    queryKey: ['vessel-events', mmsi, limit],
+    queryFn: () => apiFetch<VesselEventListResponse>(`/api/v1/vessels/${mmsi}/events?limit=${limit}`),
+    enabled: mmsi !== null,
+    refetchInterval: 60_000,
   })
 }

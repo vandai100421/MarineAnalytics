@@ -69,3 +69,58 @@ export function usePortCongestionAll(limit: number = 10) {
     refetchInterval: 30_000,
   })
 }
+
+export interface ExpectedArrival {
+  mmsi: number
+  name: string | null
+  destination: string | null
+  eta: string | null
+  ship_type_name: string | null
+}
+
+export interface ExpectedArrivalsResponse {
+  total: number
+  port_name: string
+  horizon_hours: number
+  vessels: ExpectedArrival[]
+}
+
+export function usePortExpectedArrivals(portId: number | null, hours: number = 24) {
+  return useQuery<ExpectedArrivalsResponse>({
+    queryKey: ['port-expected-arrivals', portId, hours],
+    queryFn: () =>
+      apiFetch<ExpectedArrivalsResponse>(
+        `/api/v1/ports/${portId}/expected-arrivals?hours=${hours}`,
+      ),
+    enabled: portId !== null,
+    refetchInterval: 60_000,
+  })
+}
+
+export interface RecentDeparture {
+  id: number
+  mmsi: number
+  arrived_at: string | null
+  departed_at: string | null
+  dwell_minutes: number | null
+  anchorage: boolean
+}
+
+export interface RecentDeparturesResponse {
+  total: number
+  port_name: string
+  horizon_hours: number
+  departures: RecentDeparture[]
+}
+
+export function usePortRecentDepartures(portId: number | null, hours: number = 24) {
+  return useQuery<RecentDeparturesResponse>({
+    queryKey: ['port-recent-departures', portId, hours],
+    queryFn: () =>
+      apiFetch<RecentDeparturesResponse>(
+        `/api/v1/ports/${portId}/recent-departures?hours=${hours}`,
+      ),
+    enabled: portId !== null,
+    refetchInterval: 60_000,
+  })
+}

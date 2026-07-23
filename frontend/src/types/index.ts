@@ -22,6 +22,14 @@ export interface Vessel {
   destination: string | null
   eta: string | null
   photo_url: string | null
+  gt: number | null
+  dwt: number | null
+  loa: number | null
+  beam: number | null
+  draught_max: number | null
+  year_built: number | null
+  flag: string | null
+  ais_class: string | null
   updated_at: string
 }
 
@@ -94,6 +102,8 @@ export interface AircraftPosition {
   flight: string | null
   reg: string | null
   type: string | null
+  vertical_rate: number | null
+  origin_country: string | null
 }
 
 export interface TimeSeriesPoint {
@@ -135,6 +145,7 @@ export interface OverviewResponse {
   active_vessels: number
   total_vessels: number
   avg_sog: number
+  db_total: number
 }
 
 export interface TypeCount {
@@ -240,6 +251,48 @@ export interface IdleSummary {
   total_events: number
   active_idle: number
   avg_duration_minutes: number
+}
+
+export interface PortCall {
+  id: number
+  mmsi: number
+  port_id: number | null
+  port_name: string | null
+  arrived_at: string | null
+  departed_at: string | null
+  duration_minutes: number | null
+  distance_nm: number | null
+  anchorage: boolean
+  lat: number | null
+  lon: number | null
+}
+
+export interface PortCallListResponse {
+  total: number
+  port_calls: PortCall[]
+}
+
+export interface VesselEvent {
+  id: number
+  mmsi: number
+  event_type: string
+  ts: string
+  lat: number | null
+  lon: number | null
+  severity: string
+  details: Record<string, unknown> | null
+}
+
+export interface VesselEventListResponse {
+  total: number
+  events: VesselEvent[]
+}
+
+export interface TrackStats {
+  total_distance_nm: number
+  avg_sog: number
+  max_sog: number
+  duration_hours: number
 }
 
 export interface Fleet {

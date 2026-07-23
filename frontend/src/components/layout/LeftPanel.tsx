@@ -4,9 +4,7 @@ import { useAircraftPositions } from '../../api/aircraft'
 import { useT } from '../../i18n/useI18n'
 import { Filters } from '../panel/Filters'
 import { VesselSearch } from '../panel/VesselSearch'
-import { LayerControls } from '../panel/LayerControls'
 import { StatsCards } from '../dashboard/StatsCards'
-import { FleetManager } from '../panel/FleetManager'
 
 const Charts = lazy(() => import('../dashboard/Charts').then((m) => ({ default: m.Charts })))
 const PortCongestionChart = lazy(() =>
@@ -27,10 +25,6 @@ function LeftPanelComponent() {
     <div className="flex h-full flex-col overflow-y-auto">
       <div className="border-b border-ocean-700/40 p-3">
         {showAircraft ? <AircraftSearchBox /> : <VesselSearch />}
-      </div>
-
-      <div className="border-b border-ocean-700/40 p-3">
-        <LayerControls />
       </div>
 
       <div className="border-b border-ocean-700/40 p-3">
@@ -65,14 +59,6 @@ function LeftPanelComponent() {
             >
               <PortCongestionChart />
             </Suspense>
-          </div>
-        )}
-        {layerToggles.fleet && (
-          <div className="mt-3">
-            <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-ocean-400">
-              {t('section.fleetManager')}
-            </h3>
-            <FleetManager />
           </div>
         )}
       </div>

@@ -1,7 +1,7 @@
 import type { BoundingBox } from '../types'
 
-export const TILE_RESOLUTION = 0.1
-export const SSE_TILE_RESOLUTION = 1.0
+export const TILE_RESOLUTION = 0.5
+export const SSE_TILE_RESOLUTION = 2.0
 export const PRELOAD_MARGIN = 0.5
 
 export function expandBbox(bbox: BoundingBox, margin: number = PRELOAD_MARGIN): BoundingBox {

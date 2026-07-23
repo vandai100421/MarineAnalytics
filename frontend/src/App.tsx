@@ -1,30 +1,27 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { useEffect } from 'react'
 import { MapView } from './components/map/MapView'
 import { TopNavBar } from './components/layout/TopNavBar'
 import { LeftPanel } from './components/layout/LeftPanel'
+import { RightSidebar } from './components/layout/RightSidebar'
 import { useMapStore } from './store/mapStore'
-import { useT } from './i18n/useI18n'
-
-const GeofenceEditor = lazy(() =>
-  import('./components/geofence/GeofenceEditor').then((m) => ({ default: m.GeofenceEditor })),
-)
-const AlertPanel = lazy(() =>
-  import('./components/geofence/AlertPanel').then((m) => ({ default: m.AlertPanel })),
-)
 
 export default function App() {
   const leftPanelOpen = useMapStore((state) => state.leftPanelOpen)
-  const setRightPanelOpen = useMapStore((state) => state.setRightPanelOpen)
-  const selectedMmsi = useMapStore((state) => state.selectedMmsi)
-  const selectedHex = useMapStore((state) => state.selectedHex)
-  const selectedPortId = useMapStore((state) => state.selectedPortId)
-  const t = useT()
-
-  const hasSelection = selectedMmsi !== null || selectedHex !== null || selectedPortId !== null
+  const setSelectedMmsi = useMapStore((state) => state.setSelectedMmsi)
+  const setRightActiveTab = useMapStore((state) => state.setRightActiveTab)
 
   useEffect(() => {
-    setRightPanelOpen(hasSelection)
-  }, [hasSelection, setRightPanelOpen])
+    document.title = 'MarineAnalytics'
+    const params = new URLSearchParams(window.location.search)
+    const mmsiParam = params.get('mmsi')
+    if (mmsiParam) {
+      const mmsi = Number(mmsiParam)
+      if (Number.isFinite(mmsi) && mmsi > 0) {
+        setSelectedMmsi(mmsi)
+        setRightActiveTab('details')
+      }
+    }
+  }, [setSelectedMmsi, setRightActiveTab])
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-ocean-950">
@@ -38,23 +35,6 @@ export default function App() {
       >
         <div className="min-h-0 flex-1">
           <LeftPanel />
-          <div className="border-t border-ocean-700/40 p-3">
-            <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-ocean-400">
-              {t('section.geofences')}
-            </h3>
-            <Suspense
-              fallback={<div className="text-center text-xs text-ocean-400">{t('panel.loading')}</div>}
-            >
-              <GeofenceEditor isActive={false} onToggle={() => {}} onCreated={() => {}} />
-            </Suspense>
-            <div className="mt-3">
-              <Suspense
-                fallback={<div className="text-center text-xs text-ocean-400">{t('panel.loading')}</div>}
-              >
-                <AlertPanel />
-              </Suspense>
-            </div>
-          </div>
         </div>
       </aside>
 
@@ -63,6 +43,13 @@ export default function App() {
           <MapView />
         </div>
       </main>
+
+      <aside
+        className="glass-dark relative z-20 mt-14 flex"
+        style={{ flexShrink: 0 }}
+      >
+        <RightSidebar />
+      </aside>
     </div>
   )
 }

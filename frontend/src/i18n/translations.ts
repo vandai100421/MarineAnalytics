@@ -4,7 +4,8 @@ export const translations = {
   'app.live': 'LIVE',
 
   'stat.active': 'Active',
-  'stat.total': 'Total',
+  'stat.total': 'Crawled',
+  'stat.dbTotal': 'DB Total',
   'stat.avgSog': 'Avg SOG',
   'stat.avgSpeed': 'Avg Speed',
 
@@ -23,6 +24,8 @@ export const translations = {
   'section.voyageEta': 'Voyage & ETA',
   'section.trackHistory': 'Track History',
   'section.speedProfile': 'Speed Profile',
+  'section.courseProfile': 'Course Profile',
+  'section.distanceProfile': 'Distance Profile',
   'section.geofences': 'Geofences',
   'section.recentAlerts': 'Recent Alerts',
   'section.overview': 'Overview',
@@ -34,6 +37,12 @@ export const translations = {
   'section.fleetManager': 'Fleet Manager',
   'section.vesselStats': 'Vessel Statistics',
   'section.aircraftStats': 'Aircraft Statistics',
+  'section.alerts': 'Alerts',
+  'section.details': 'Details',
+  'section.vesselHeader': 'Vessel Overview',
+  'section.forecastTrack': 'Forecast Track',
+  'section.portCalls': 'Port Calls',
+  'section.eventsAnomalies': 'Events & Anomalies',
 
   'tab.vessels': 'Vessels',
   'tab.aircraft': 'Aircraft',
@@ -47,6 +56,7 @@ export const translations = {
   'layer.anchorage': 'Anchorage',
   'layer.idle': 'Idle Vessels',
   'layer.fleet': 'Fleet',
+  'layer.weather': 'Weather',
 
   'filter.minSpeed': 'Min Speed',
   'filter.maxAlt': 'Max Altitude',
@@ -66,6 +76,20 @@ export const translations = {
   'vessel.noTrack': 'No track history available',
   'vessel.positionReports': 'position reports available',
   'vessel.exportTrack': 'Export Track CSV',
+  'vessel.exportKml': 'Export KML',
+  'vessel.exportGpx': 'Export GPX',
+  'vessel.centerOnVessel': 'Center on vessel',
+  'vessel.shareLink': 'Share link',
+  'vessel.screenshot': 'Screenshot',
+  'vessel.addToFleet': 'Add to fleet',
+  'vessel.linkCopied': 'Link copied to clipboard',
+  'vessel.forecast1h': 'Forecast 1h',
+  'vessel.forecast3h': 'Forecast 3h',
+  'vessel.forecast6h': 'Forecast 6h',
+  'vessel.forecast12h': 'Forecast 12h',
+  'vessel.forecast24h': 'Forecast 24h',
+  'vessel.clearForecast': 'Clear forecast',
+  'vessel.flag': 'Flag',
   'vessel.updated': 'Updated',
 
   'field.latitude': 'Latitude',
@@ -157,6 +181,9 @@ export const translations = {
 
   'zoom.detail': 'Detail',
   'zoom.cluster': 'Cluster',
+  'zoom.in': 'Zoom in',
+  'zoom.out': 'Zoom out',
+  'zoom.locate': 'Locate selected object',
 
   'confidence.high': 'High',
   'confidence.medium': 'Medium',
@@ -165,6 +192,17 @@ export const translations = {
   'time.hours': 'h',
   'time.minutes': 'm',
   'time.days': 'd',
+
+  'track.range.1h': '1H',
+  'track.range.6h': '6H',
+  'track.range.24h': '24H',
+  'track.range.7d': '7D',
+  'track.range.30d': '30D',
+  'track.totalDistance': 'Total distance',
+  'track.avgSpeed': 'Avg speed',
+  'track.maxSpeed': 'Max speed',
+  'track.duration': 'Duration',
+  'track.noTrack': 'No track available',
 } as const
 
 export type TranslationKey = keyof typeof translations

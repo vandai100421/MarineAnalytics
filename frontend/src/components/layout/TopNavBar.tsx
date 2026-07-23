@@ -39,7 +39,6 @@ function TopNavBarComponent() {
         <span className="h-4 w-px bg-ocean-700" />
         <Stat label={t('stat.avgSog')} value={stats ? `${stats.avg_sog}kn` : '—'} color="text-amber-400" />
       </div>
-
       <div className="flex-1" />
 
       <button
