@@ -11,7 +11,9 @@ const VESSEL_SVG = (color: string) =>
     <path d="M32 6 L46 50 L32 42 L18 50 Z" fill="${color}" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round" filter="url(#s)"/>
   </svg>`
 
-const VESSEL_ICON_URL = `data:image/svg+xml;base64,${btoa(VESSEL_SVG('#0ea5e9'))}`
+export const VESSEL_ICON_URL = `data:image/svg+xml;base64,${btoa(VESSEL_SVG('#0ea5e9'))}`
+const TRACK_ICON_URL = `data:image/svg+xml;base64,${btoa(VESSEL_SVG('#fbbf24'))}`
+export { TRACK_ICON_URL }
 
 interface VesselLayerProps {
   data: VesselPosition[]

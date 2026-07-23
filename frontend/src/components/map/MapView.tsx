@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import MapGL, { type MapRef } from 'react-map-gl/maplibre'
 import { DeckGL } from 'deck.gl'
 import type { Layer } from '@deck.gl/core'
-import { PathLayer, TextLayer, ScatterplotLayer } from '@deck.gl/layers'
+import { PathLayer, TextLayer, ScatterplotLayer, IconLayer } from '@deck.gl/layers'
 import { useMapStore } from '../../store/mapStore'
 import { useVesselPositions, useVesselTrack, useVesselCluster, useVesselRealtime } from '../../api/vessels'
 import { useAircraftPositions } from '../../api/aircraft'
@@ -14,7 +14,7 @@ import { useWind } from '../../api/weather'
 import { useSSE } from '../../hooks/useSSE'
 import { useMapViewport } from '../../hooks/useMapViewport'
 import { useI18n } from '../../i18n/useI18n'
-import { createVesselLayer } from './VesselLayer'
+import { createVesselLayer, TRACK_ICON_URL } from './VesselLayer'
 import { createHeatmapLayer } from './HeatmapLayer'
 import { createAircraftLayer } from './AircraftLayer'
 import { createPortLayer } from './PortLayer'
@@ -186,6 +186,7 @@ export function MapView() {
 
     if (trackData && trackData.points.length > 0) {
       const pts = trackData.points.slice(0, playbackIndex + 1)
+      const currentPt = pts[pts.length - 1]
       if (pts.length > 1) {
         const segments: { path: [number, number][]; sog: number }[] = []
         for (let i = 1; i < pts.length; i++) {
@@ -208,6 +209,47 @@ export function MapView() {
             getColor: (d: { sog: number }) => sogToColor(d.sog),
             getWidth: 3,
             widthMinPixels: 2,
+            pickable: false,
+            parameters: { depthTest: false },
+          }),
+        )
+      }
+
+      if (currentPt) {
+        const trackIconMapping = {
+          vessel: { x: 0, y: 0, width: 64, height: 64, anchorY: 32, mask: false },
+        }
+        result.push(
+          new ScatterplotLayer({
+            id: 'track-current-ring',
+            data: [currentPt],
+            getPosition: (d: { lon: number; lat: number }) => [d.lon, d.lat],
+            getRadius: 600,
+            radiusMinPixels: 14,
+            radiusMaxPixels: 30,
+            getFillColor: [251, 191, 36, 60],
+            stroked: true,
+            getLineColor: [251, 191, 36, 200],
+            lineWidthMinPixels: 2,
+            pickable: false,
+            parameters: { depthTest: false },
+          }),
+        )
+        result.push(
+          new IconLayer({
+            id: 'track-current-icon',
+            data: [currentPt],
+            iconAtlas: TRACK_ICON_URL,
+            iconMapping: trackIconMapping,
+            getIcon: () => 'vessel',
+            getPosition: (d: { lon: number; lat: number }) => [d.lon, d.lat],
+            getSize: () => 1.6,
+            sizeScale: 24,
+            sizeMinPixels: 28,
+            sizeMaxPixels: 56,
+            getAngle: (d: { heading?: number | null; cog?: number | null }) =>
+              -(d.heading ?? d.cog ?? 0),
+            getColor: [255, 255, 255],
             pickable: false,
             parameters: { depthTest: false },
           }),
